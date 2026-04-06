@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" role="img" aria-labelledby="title">
+  <title>Skrill</title>
+  <g fill="#a10084">
+    <path d="M25 13 37 25 25 37 13 25z"/>
+    <path d="M41 13 53 25 41 37 29 25z"/>
+  </g>
+  <text x="66" y="39" font-family="Helvetica Neue, Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#a10084">Skrill</text>
+</svg>

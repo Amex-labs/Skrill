@@ -1,0 +1,12 @@
+{
+  "name": "skrill-sandbox-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-contained local Skrill sandbox simulator for safe API flow testing.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}

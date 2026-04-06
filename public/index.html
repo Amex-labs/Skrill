@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skrill Sandbox Simulator</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <button
+            class="menu-toggle"
+            id="menuToggle"
+            type="button"
+            aria-label="Toggle wallet dashboard"
+            aria-controls="dashboardSidebar"
+            aria-expanded="false"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <a class="brand-link" href="/" aria-label="Skrill">
+            <img src="/skrill-wordmark-black.svg" alt="Skrill" class="brand-wordmark" />
+          </a>
+
+          <div class="header-actions">
+            <button class="language-button" type="button" aria-label="Language">
+              <span class="globe-icon" aria-hidden="true"></span>
+              <span>EN</span>
+            </button>
+            <div class="header-session" id="headerSession" hidden></div>
+            <button class="header-button header-button--ghost" type="button" data-open-auth="login">
+              Log in
+            </button>
+            <button class="header-button header-button--brand" type="button" data-open-auth="register">
+              Register
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="guest-menu-panel" id="guestMenuPanel" hidden>
+        <button
+          class="guest-menu-panel__backdrop"
+          id="guestMenuBackdrop"
+          type="button"
+          aria-label="Close homepage menu"
+        ></button>
+        <div class="guest-menu-panel__sheet" aria-label="Homepage menu">
+          <div class="guest-menu-panel__head">
+            <div>
+              <p class="section-kicker">Wallet access</p>
+              <h2>Choose how you want to begin</h2>
+            </div>
+            <button class="guest-menu-close" id="guestMenuClose" type="button" aria-label="Close menu">
+              ×
+            </button>
+          </div>
+          <p class="guest-menu-panel__copy">
+            Open a secure local wallet session or create a new profile from the homepage.
+          </p>
+          <div class="guest-menu-panel__actions">
+            <button class="button guest-menu-button guest-menu-button--ghost" type="button" data-open-auth="login">
+              Log in
+            </button>
+            <button class="button guest-menu-button guest-menu-button--brand" type="button" data-open-auth="register">
+              Register
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section class="hero-stage hero-stage--solutions">
+        <div class="hero-solutions">
+          <div class="hero-photo-banner">
+            <div class="hero-photo-banner__overlay"></div>
+            <div class="hero-photo-banner__content">
+              <p class="hero-photo-banner__kicker">Payments made reassuringly simple</p>
+              <h1>Make your move</h1>
+              <p>
+                Pay online, send money and buy crypto with a digital wallet used by millions.
+              </p>
+              <div class="hero-actions hero-actions--banner">
+                <a class="button hero-primary" href="#homepage-story">Explore features</a>
+                <button class="button hero-secondary" type="button" data-open-auth="login">
+                  Get started
+                </button>
+              </div>
+            </div>
+            <div class="hero-assurance" aria-label="Wallet reassurance">
+              <div class="hero-assurance__item">
+                <span class="hero-assurance__label">Transfer clarity</span>
+                <strong>Preview fees and total debit before you confirm.</strong>
+              </div>
+              <div class="hero-assurance__item">
+                <span class="hero-assurance__label">Payment records</span>
+                <strong>Keep receipts and activity together in one clean wallet view.</strong>
+              </div>
+              <div class="hero-assurance__item">
+                <span class="hero-assurance__label">Customer care</span>
+                <a class="hero-assurance__link" href="mailto:emails.skrill@aol.com">emails.skrill@aol.com</a>
+              </div>
+            </div>
+          </div>
+
+          <section class="home-spotlight" id="homepage-story">
+            <div class="home-spotlight__media" aria-hidden="true">
+              <div class="spotlight-scene">
+                <div class="spotlight-scene__glow"></div>
+                <div class="spotlight-phone">
+                  <div class="spotlight-phone__notch"></div>
+                  <div class="spotlight-phone__screen">
+                    <p class="spotlight-phone__label">Rate alert</p>
+                    <div class="spotlight-phone__currency">€</div>
+                    <strong>Stay ahead of the rate</strong>
+                    <p>Receive a clear alert as soon as your target becomes available.</p>
+                    <span class="spotlight-phone__cta">Create alert</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-spotlight__copy">
+              <p class="hero-solutions__kicker">Support that feels proactive</p>
+              <h2>Stay ahead of the rate</h2>
+              <p class="home-spotlight__lead">
+                Stay informed with clearer conversion timing, cleaner visibility, and more
+                confident payment decisions from the moment you open your wallet.
+              </p>
+              <ul class="home-spotlight__list">
+                <li>Custom rate notifications when timing matters most</li>
+                <li>Clearer payment decisions without unnecessary noise</li>
+                <li>Smarter movement of funds with more confidence</li>
+              </ul>
+              <div class="home-support-rail" aria-label="Customer care support">
+                <div>
+                  <p class="hero-solutions__kicker">Customer care</p>
+                  <strong>Need help with payments, transfers, or receipts?</strong>
+                </div>
+                <a class="home-support-rail__link" href="mailto:emails.skrill@aol.com">
+                  emails.skrill@aol.com
+                </a>
+              </div>
+              <button class="button solution-button" type="button" data-open-auth="login">
+                Get started
+              </button>
+            </div>
+          </section>
+
+          <section class="home-features" id="homepage-features" aria-label="Wallet features">
+            <div class="home-features__intro">
+              <p class="hero-solutions__kicker">Everything in one wallet experience</p>
+              <h2>Built to feel clear, steady, and easy to trust.</h2>
+              <p>
+                Move from payment to receipt with cleaner visibility, more confidence around every
+                transfer, and direct access to support whenever you need it.
+              </p>
+            </div>
+            <div class="home-feature-grid">
+              <article class="home-feature-card">
+                <div class="home-feature-card__art">
+                  <svg viewBox="0 0 180 132" aria-hidden="true" class="home-feature-illustration">
+                    <rect x="46" y="24" width="68" height="88" rx="14" fill="#ffffff" stroke="#1f1f1f" stroke-width="3"></rect>
+                    <rect x="66" y="32" width="28" height="8" rx="4" fill="#1f1f1f"></rect>
+                    <circle cx="62" cy="68" r="24" fill="#a10785" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="62" y="79" text-anchor="middle" font-size="42" font-weight="700" fill="#ffffff">€</text>
+                    <circle cx="116" cy="42" r="18" fill="#f5d9f0" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="116" y="49" text-anchor="middle" font-size="22" font-weight="700" fill="#81115f">£</text>
+                    <circle cx="128" cy="78" r="18" fill="#a10785" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="128" y="85" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">$</text>
+                  </svg>
+                </div>
+                <h3>Pay online</h3>
+                <p>
+                  Check out confidently while keeping your bank details private and your wallet in
+                  control.
+                </p>
+                <button class="button solution-button" type="button" data-open-auth="login">
+                  Explore payments
+                </button>
+              </article>
+
+              <article class="home-feature-card">
+                <div class="home-feature-card__art">
+                  <svg viewBox="0 0 180 132" aria-hidden="true" class="home-feature-illustration">
+                    <path d="M38 78 L126 34 L92 100 Z" fill="#ffffff" stroke="#1f1f1f" stroke-width="3"></path>
+                    <path d="M38 78 L76 68 L92 100 Z" fill="#f3f0f4" stroke="#1f1f1f" stroke-width="3"></path>
+                    <circle cx="78" cy="58" r="24" fill="#a10785" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="78" y="68" text-anchor="middle" font-size="40" font-weight="700" fill="#ffffff">€</text>
+                    <path d="M46 38 L58 54" stroke="#1f1f1f" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M52 92 L64 108" stroke="#1f1f1f" stroke-width="3" stroke-linecap="round"></path>
+                  </svg>
+                </div>
+                <h3>Send money</h3>
+                <p>
+                  Move funds to another wallet or bank destination with a clear preview before you
+                  confirm.
+                </p>
+                <button class="button solution-button" type="button" data-open-auth="login">
+                  Explore transfers
+                </button>
+              </article>
+
+              <article class="home-feature-card">
+                <div class="home-feature-card__art">
+                  <svg viewBox="0 0 180 132" aria-hidden="true" class="home-feature-illustration">
+                    <circle cx="64" cy="42" r="18" fill="#f5d9f0" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="64" y="49" text-anchor="middle" font-size="22" font-weight="700" fill="#81115f">Ł</text>
+                    <circle cx="104" cy="62" r="30" fill="#ffffff" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="104" y="73" text-anchor="middle" font-size="40" font-weight="700" fill="#81115f">₿</text>
+                    <circle cx="136" cy="86" r="18" fill="#a10785" stroke="#1f1f1f" stroke-width="3"></circle>
+                    <text x="136" y="93" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">◊</text>
+                  </svg>
+                </div>
+                <h3>Crypto</h3>
+                <p>
+                  Review multi-currency balances in a cleaner wallet space with clearer visibility
+                  across your funds.
+                </p>
+                <button class="button solution-button" type="button" data-open-auth="login">
+                  View balances
+                </button>
+              </article>
+
+              <article class="home-feature-card">
+                <div class="home-feature-card__art">
+                  <svg viewBox="0 0 180 132" aria-hidden="true" class="home-feature-illustration">
+                    <circle cx="92" cy="66" r="36" fill="#f6d7f0"></circle>
+                    <path d="M92 24 L102 52 L132 52 L108 70 L118 100 L92 82 L66 100 L76 70 L52 52 L82 52 Z" fill="#ffffff" stroke="#1f1f1f" stroke-width="3"></path>
+                    <path d="M92 40 L98 58 L116 58 L102 68 L108 86 L92 76 L76 86 L82 68 L68 58 L86 58 Z" fill="#a10785" stroke="#1f1f1f" stroke-width="3"></path>
+                  </svg>
+                </div>
+                <h3>Loyalty rewards</h3>
+                <p>
+                  Keep receipts, perks, and account benefits together for a more organized wallet
+                  experience.
+                </p>
+                <button class="button solution-button" type="button" data-open-auth="login">
+                  See benefits
+                </button>
+              </article>
+            </div>
+          </section>
+      </section>
+
+      <footer class="home-footer" id="homepage-footer" aria-label="Homepage footer">
+        <div class="home-footer__top">
+          <section class="home-footer__connect" aria-label="Connect with us">
+            <p class="section-kicker section-kicker--footer">Connect with us</p>
+            <div class="home-footer__socials">
+              <a class="home-footer__social" href="#homepage-footer" aria-label="Facebook">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M13.2 21v-7.3h2.5l.4-3h-2.9V8.9c0-.9.3-1.5 1.6-1.5H16V4.8c-.3 0-1.1-.1-2.1-.1-2 0-3.5 1.2-3.5 3.6v2.1H8v3h2.4V21h2.8Z"></path>
+                </svg>
+              </a>
+              <a class="home-footer__social" href="#homepage-footer" aria-label="X">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 5h3.4l3.8 5.2L16.8 5H19l-5.7 6.5L19 19h-3.4l-4.1-5.5L6.7 19H4.5l6-6.8L5 5Z"></path>
+                </svg>
+              </a>
+              <a class="home-footer__social" href="#homepage-footer" aria-label="Instagram">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4.5" y="4.5" width="15" height="15" rx="4.2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                  <circle cx="12" cy="12" r="3.6" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                  <circle cx="16.8" cy="7.5" r="1.2"></circle>
+                </svg>
+              </a>
+            </div>
+            <div class="home-footer__support">
+              <span class="home-footer__support-label">Customer care email</span>
+              <a class="home-footer__support-link" href="mailto:emails.skrill@aol.com">
+                emails.skrill@aol.com
+              </a>
+            </div>
+          </section>
+
+          <nav class="home-footer__links" aria-label="Footer links">
+            <a href="#homepage-features">Fees</a>
+            <a href="#homepage-story">Support</a>
+            <a href="#homepage-footer">Terms &amp; conditions</a>
+            <a href="#homepage-footer">Privacy notice</a>
+            <a href="#homepage-footer">PSD2 APIs</a>
+            <a href="#homepage-footer">Cookie settings</a>
+            <a href="#homepage-footer">Help centre</a>
+            <a href="#homepage-footer">Law enforcement portal</a>
+          </nav>
+
+          <section class="home-footer__downloads" aria-label="Download the wallet">
+            <svg class="home-footer__qr-code" viewBox="0 0 108 108" aria-hidden="true">
+              <rect width="108" height="108" rx="18" fill="#ffffff"></rect>
+              <rect x="14" y="14" width="26" height="26" fill="#111111"></rect>
+              <rect x="20" y="20" width="14" height="14" fill="#ffffff"></rect>
+              <rect x="68" y="14" width="26" height="26" fill="#111111"></rect>
+              <rect x="74" y="20" width="14" height="14" fill="#ffffff"></rect>
+              <rect x="14" y="68" width="26" height="26" fill="#111111"></rect>
+              <rect x="20" y="74" width="14" height="14" fill="#ffffff"></rect>
+              <rect x="50" y="18" width="8" height="8" fill="#111111"></rect>
+              <rect x="50" y="32" width="8" height="8" fill="#111111"></rect>
+              <rect x="46" y="46" width="12" height="12" fill="#111111"></rect>
+              <rect x="64" y="48" width="10" height="10" fill="#111111"></rect>
+              <rect x="80" y="48" width="10" height="10" fill="#111111"></rect>
+              <rect x="48" y="66" width="8" height="8" fill="#111111"></rect>
+              <rect x="62" y="66" width="8" height="8" fill="#111111"></rect>
+              <rect x="76" y="66" width="18" height="8" fill="#111111"></rect>
+              <rect x="50" y="82" width="12" height="12" fill="#111111"></rect>
+              <rect x="70" y="82" width="8" height="8" fill="#111111"></rect>
+              <rect x="84" y="82" width="10" height="10" fill="#111111"></rect>
+            </svg>
+            <div class="home-footer__store-list">
+              <a class="home-store-badge" href="#homepage-footer">
+                <span class="home-store-badge__meta">Get it on</span>
+                <strong>Google Play</strong>
+              </a>
+              <a class="home-store-badge" href="#homepage-footer">
+                <span class="home-store-badge__meta">Download on the</span>
+                <strong>App Store</strong>
+              </a>
+            </div>
+          </section>
+        </div>
+
+        <div class="home-footer__bottom">
+          <p class="home-footer__legal">
+            Copyright © 2026 Local wallet experience. This homepage is designed for guided
+            payment walkthroughs, transfer previews, and receipt review in a controlled
+            environment. Feature availability, verification steps, and settlement timing may
+            vary by recipient profile and transfer type.
+          </p>
+          <div class="home-footer__signature">
+            <img src="/skrill-wordmark-black.svg" alt="Skrill" class="brand-wordmark brand-wordmark--footer" />
+            <a class="home-footer__rates" href="#homepage-story">Send money rates</a>
+          </div>
+        </div>
+      </footer>
+
+      <section class="login-stage" id="sandbox-access" hidden aria-hidden="true">
+        <div class="login-stage__backdrop" data-close-auth-modal="true"></div>
+        <div class="login-stage__surface">
+          <div class="login-stage__bar">
+            <img src="/skrill-wordmark-purple.svg" alt="Skrill" class="brand-wordmark brand-wordmark--login" />
+            <div class="login-stage__bar-actions">
+              <div class="language-chip">English</div>
+              <button class="auth-close" id="closeAuthModal" type="button" aria-label="Close sign in">
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div class="login-layout">
+            <div class="auth-showcase">
+              <p class="auth-showcase__kicker">Secure account access</p>
+              <h2>Sign in to a cleaner wallet workspace.</h2>
+              <p class="auth-showcase__lead">
+                Open your account profile to review balances, transfers, and receipts from one
+                organized place with less noise and clearer guidance.
+              </p>
+              <div class="auth-showcase__grid" aria-label="Account access highlights">
+                <article class="auth-showcase__card">
+                  <span>Wallet overview</span>
+                  <strong>See balances, recent movements, and payment records in one place.</strong>
+                </article>
+                <article class="auth-showcase__card">
+                  <span>Transfer review</span>
+                  <strong>Check the fee and final debit before confirming a transfer.</strong>
+                </article>
+                <article class="auth-showcase__card">
+                  <span>Customer care</span>
+                  <strong>
+                    Need help signing in? Contact
+                    <a href="mailto:emails.skrill@aol.com">emails.skrill@aol.com</a>
+                  </strong>
+                </article>
+              </div>
+            </div>
+
+            <div class="login-card">
+              <div class="auth-tabs" role="tablist" aria-label="Account access">
+                <button class="auth-tab is-active" type="button" data-auth-mode="login" aria-pressed="true">
+                  Log in
+                </button>
+                <button class="auth-tab" type="button" data-auth-mode="register" aria-pressed="false">
+                  Register
+                </button>
+              </div>
+
+              <section class="auth-panel is-active" data-auth-panel="login">
+                <div class="login-copy login-copy--left">
+                  <h2>Welcome back</h2>
+                  <p>Enter your account email and password to continue securely.</p>
+                </div>
+
+                <form id="loginForm" class="sandbox-form login-form">
+                  <label>
+                    <span>Email</span>
+                    <input id="loginEmail" name="email" type="email" placeholder="Enter your email" autocomplete="username" required />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <input id="loginPassword" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+                  </label>
+                  <button class="button sandbox-submit" type="submit">Log in</button>
+                </form>
+
+                <p class="login-feedback" id="loginFeedback" aria-live="polite"></p>
+
+                <button class="button passkey-button" type="button">Log in with passkey</button>
+
+                <p class="auth-switch auth-switch--soft">
+                  Don’t have an account?
+                  <button class="auth-link" type="button" data-auth-mode="register">Register</button>
+                </p>
+              </section>
+
+              <section class="auth-panel" data-auth-panel="register" hidden>
+                <div class="login-copy login-copy--left">
+                  <h2>Create your wallet profile</h2>
+                  <p>Set up your account details, preferred currency, and opening balance.</p>
+                </div>
+
+                <form id="accountForm" class="sandbox-form">
+                  <label>
+                    <span>Owner name</span>
+                    <input id="ownerName" name="ownerName" type="text" placeholder="Gabriele Navisi" required />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input id="accountEmail" name="email" type="email" placeholder="name@example.com" required />
+                  </label>
+                  <div class="field-row">
+                    <label>
+                      <span>Type</span>
+                      <select id="accountType" name="type">
+                        <option value="MERCHANT">Merchant</option>
+                        <option value="PERSONAL">Personal</option>
+                        <option value="BUSINESS">Business</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Currency</span>
+                      <select id="accountCurrency" name="currency">
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    <span>Starting balance</span>
+                    <input id="startingBalance" name="startingBalance" type="number" min="1" step="0.01" value="2500" required />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <input id="demoPassword" name="demoPassword" type="password" placeholder="Create a password" autocomplete="new-password" required />
+                  </label>
+                  <button class="button sandbox-submit" type="submit">Create account</button>
+                </form>
+
+                <p class="login-feedback login-feedback--register" id="registerFeedback" aria-live="polite">
+                  Create your profile here, then sign in when you're ready.
+                </p>
+
+                <p class="auth-switch auth-switch--soft">
+                  Already have an account?
+                  <button class="auth-link" type="button" data-auth-mode="login">Log in</button>
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-stage" id="developer">
+        <div class="dashboard-shell">
+          <div class="dashboard-sidebar-backdrop" id="dashboardSidebarBackdrop" hidden></div>
+
+          <aside class="dashboard-sidebar" id="dashboardSidebar" aria-label="Wallet dashboard panel" aria-hidden="true">
+            <div class="dashboard-sidebar__top">
+              <div class="dashboard-sidebar__brand">
+                <p class="section-kicker">Sandbox demo</p>
+                <h2>Wallet dashboard</h2>
+                <p class="session-state" id="sessionState">No sandbox account signed in</p>
+              </div>
+              <button class="sidebar-close" id="sidebarCloseButton" type="button" aria-label="Close wallet dashboard">
+                ×
+              </button>
+            </div>
+
+            <nav class="dashboard-nav" aria-label="Dashboard navigation">
+              <button class="dashboard-nav__item is-active" type="button" data-dashboard-view="overview">
+                Overview
+              </button>
+              <button class="dashboard-nav__item" type="button" data-dashboard-view="transfer">
+                Transfer
+              </button>
+              <button class="dashboard-nav__item" type="button" data-dashboard-view="transactions">
+                Transactions
+              </button>
+              <button class="dashboard-nav__item" type="button" data-dashboard-view="receipts">
+                Receipts
+              </button>
+              <button class="dashboard-nav__item" type="button" data-dashboard-view="developer">
+                Developer tools
+              </button>
+            </nav>
+
+            <section class="sidebar-card sidebar-card--balance">
+              <p class="section-kicker">Active wallet</p>
+              <h3 id="walletBalance">EUR 0.00</h3>
+              <p id="walletOwner">No active sandbox account</p>
+              <div class="wallet-chip-row">
+                <span class="wallet-chip" id="walletTypeChip">SANDBOX</span>
+                <span class="wallet-chip wallet-chip--light" id="walletCurrencyChip">EUR</span>
+              </div>
+            </section>
+
+            <section class="sidebar-card">
+              <p class="section-kicker">Quick actions</p>
+              <div class="sidebar-actions">
+                <button class="sidebar-action" type="button" data-wallet-action="send">New sandbox transfer</button>
+                <button class="sidebar-action" type="button" data-wallet-action="receipt">Open latest receipt</button>
+                <button class="sidebar-action" type="button" data-wallet-action="developer">Go to developer tools</button>
+              </div>
+            </section>
+
+            <section class="sidebar-card">
+              <div class="section-head">
+                <p class="section-kicker">Accounts</p>
+                <h3>Sandbox vault</h3>
+              </div>
+              <div id="accountsList" class="account-list"></div>
+            </section>
+          </aside>
+
+          <div class="dashboard-main">
+            <header class="dashboard-topbar dashboard-topbar--context">
+              <div class="dashboard-topbar__copy">
+                <p class="section-kicker" id="topbarKicker">Account overview</p>
+                <h2 id="walletGreeting">Sign in to open the account wallet.</h2>
+                <p class="section-meta dashboard-topbar__meta" id="topbarMeta">
+                  Review your balance, activity, and transfers from one place.
+                </p>
+              </div>
+              <div class="dashboard-topbar__actions">
+                <div class="topbar-account-snapshot" aria-label="Account snapshot">
+                  <p class="metric-label">Available balance</p>
+                  <strong id="topbarBalance">EUR 0.00</strong>
+                  <div class="topbar-account-snapshot__meta">
+                    <span class="topbar-account-snapshot__badge" id="topbarSnapshotBadge">No active session</span>
+                    <span class="topbar-account-snapshot__hint" id="topbarSnapshotHint">Sign in to view account activity.</span>
+                  </div>
+                </div>
+                <button class="button ghost-button topbar-logout" id="logoutButton" type="button" hidden>Logout</button>
+              </div>
+            </header>
+
+            <section class="dashboard-view is-active" data-view-panel="overview">
+              <section class="dashboard-panel overview-wallet-panel">
+                <div class="overview-wallet-head">
+                  <div>
+                    <p class="section-kicker">Wallet overview</p>
+                    <h3 id="overviewHolderName">No active account</h3>
+                    <p class="section-meta" id="overviewWalletEmail">Sign in to view your wallet.</p>
+                  </div>
+                  <div class="overview-wallet-balance">
+                    <p class="metric-label">Available balance</p>
+                    <strong id="overviewWalletBalance">EUR 0.00</strong>
+                  </div>
+                </div>
+                <div class="overview-wallet-meta" id="overviewWalletMeta"></div>
+                <div class="overview-primary-actions">
+                  <button class="button control-button overview-action" type="button" data-wallet-action="send">
+                    Send money
+                  </button>
+                  <button class="button ghost-button overview-action" type="button" data-wallet-action="receipt">
+                    View receipts
+                  </button>
+                  <button class="button ghost-button overview-action" type="button" data-dashboard-view-shortcut="transactions">
+                    Open activity
+                  </button>
+                </div>
+              </section>
+
+              <section class="summary-grid" aria-label="Wallet summary">
+                <article class="summary-card">
+                  <p class="metric-label">Available</p>
+                  <p class="metric-value" id="metricAccounts">0</p>
+                </article>
+                <article class="summary-card">
+                  <p class="metric-label">Reserved</p>
+                  <p class="metric-value" id="metricRequests">0</p>
+                </article>
+                <article class="summary-card">
+                  <p class="metric-label">Transfers</p>
+                  <p class="metric-value" id="metricTransactions">0</p>
+                </article>
+                <article class="summary-card">
+                  <p class="metric-label">Receipts</p>
+                  <p class="metric-value" id="metricSca">0</p>
+                </article>
+                <article class="summary-card">
+                  <p class="metric-label">Pending checks</p>
+                  <p class="metric-value" id="metricLiquidity">0</p>
+                </article>
+              </section>
+
+              <div class="overview-grid">
+                <section class="dashboard-panel overview-panel overview-panel--identity">
+                  <div class="section-head section-head-spread">
+                    <div>
+                      <p class="section-kicker">Account details</p>
+                      <h3>Account identity</h3>
+                    </div>
+                    <p class="status-pill dark challenge-banner" id="challengeBanner">No active SCA challenge</p>
+                  </div>
+                  <div id="walletDetails" class="wallet-details"></div>
+                </section>
+
+                <section class="dashboard-panel overview-panel overview-panel--activity">
+                  <div class="section-head">
+                    <p class="section-kicker">Recent activity</p>
+                    <h3>Latest wallet movements</h3>
+                  </div>
+                  <div id="walletRecentActivity" class="wallet-recent-list"></div>
+                </section>
+              </div>
+            </section>
+
+            <section class="dashboard-view" data-view-panel="transfer">
+              <div class="transfer-grid">
+                <section class="dashboard-panel">
+                  <div class="section-head section-head-spread">
+                    <div>
+                      <p class="section-kicker">Transfer</p>
+                      <h3>Send money</h3>
+                    </div>
+                    <p class="section-meta" id="transferStatus">
+                      Compose a wallet transfer, preview fees, and confirm the final debit.
+                    </p>
+                  </div>
+
+                  <div class="transfer-source-card">
+                    <div>
+                      <p class="metric-label">From account</p>
+                      <strong id="transferSourceName">No active account</strong>
+                      <p class="section-meta transfer-source-meta" id="transferSourceMeta">
+                        Sign in to choose a funding source.
+                      </p>
+                    </div>
+                    <div class="transfer-source-balance">
+                      <p class="metric-label">Spendable</p>
+                      <strong id="transferSourceBalance">EUR 0.00</strong>
+                    </div>
+                  </div>
+
+                  <form id="transferForm" class="transfer-form">
+                    <label class="span-two">
+                      <span>Recipient email</span>
+                      <input id="transferRecipient" name="recipientEmail" type="email" value="treasury.ops@sandbox.skrill.local" />
+                    </label>
+                    <label>
+                      <span>Amount</span>
+                      <input id="transferAmount" name="amount" type="number" min="1" step="0.01" value="275" />
+                    </label>
+                    <label>
+                      <span>Currency</span>
+                      <select id="transferCurrency" name="currency">
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </label>
+                    <label class="span-two">
+                      <span>Reference</span>
+                      <input id="transferMessage" name="message" type="text" value="Sandbox payout rehearsal" />
+                    </label>
+                    <div class="transfer-actions span-two">
+                      <button class="button ghost-button" id="previewTransferButton" type="button">Preview fees</button>
+                      <button class="button control-button" id="submitTransferButton" type="submit">Send transfer</button>
+                    </div>
+                  </form>
+
+                  <div class="transfer-feedback" id="transferFeedback">
+                    Transfers of 250 or more trigger the local SCA challenge flow.
+                  </div>
+                </section>
+
+                <section class="dashboard-panel">
+                  <div class="section-head">
+                    <p class="section-kicker">Transfer summary</p>
+                    <h3>Transfer review</h3>
+                  </div>
+                  <div class="transfer-summary" id="transferSummary">
+                    <div class="receipt-empty">
+                      Preview a transfer to calculate fees, available balance, and whether local SCA
+                      will be required.
+                    </div>
+                  </div>
+                </section>
+
+                <section class="dashboard-panel transfer-challenge-panel" id="transferChallengePanel">
+                  <div class="section-head">
+                    <p class="section-kicker">Transfer challenge</p>
+                    <h3>Complete local SCA</h3>
+                  </div>
+                  <p class="transfer-challenge-copy" id="transferChallengeCopy">
+                    No active transfer challenge for the current wallet.
+                  </p>
+                  <p class="transfer-challenge-note">
+                    Tap <strong>Send OTP</strong> to generate a one-time confirmation code for this
+                    transfer. The generated code will appear in the field below.
+                  </p>
+                  <label>
+                    <span>Confirmation code</span>
+                    <input id="transferOtp" type="text" inputmode="numeric" placeholder="Generated after you send the OTP" />
+                  </label>
+                  <div class="transfer-challenge-actions">
+                    <button class="button ghost-button" id="issueTransferOtpButton" type="button">Send OTP</button>
+                    <button class="button control-button" id="completeTransferButton" type="button">Verify and finalize</button>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <section class="dashboard-view" data-view-panel="transactions">
+              <section class="dashboard-panel">
+                <div class="section-head section-head-spread">
+                  <div>
+                    <p class="section-kicker">Transactions</p>
+                    <h3>Sandbox transaction ledger</h3>
+                  </div>
+                  <p class="section-meta">Filter and inspect wallet movements across the local sandbox.</p>
+                </div>
+
+                <div class="filter-bar">
+                  <label class="filter-field">
+                    <span>Search</span>
+                    <input id="txSearch" type="text" placeholder="Search by counterparty, email, or ID" />
+                  </label>
+                  <label class="filter-field">
+                    <span>Status</span>
+                    <select id="txStatusFilter">
+                      <option value="ALL">All statuses</option>
+                      <option value="PROCESSED">Processed</option>
+                      <option value="SCA_CHALLENGE">SCA challenge</option>
+                      <option value="OTP_VERIFIED">OTP verified</option>
+                    </select>
+                  </label>
+                  <label class="filter-field">
+                    <span>Direction</span>
+                    <select id="txDirectionFilter">
+                      <option value="ALL">All directions</option>
+                      <option value="OUTGOING">Outgoing</option>
+                      <option value="INCOMING">Incoming</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="transaction-table-wrap">
+                  <table class="transaction-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Counterparty</th>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                        <th>Status</th>
+                        <th>Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody id="transactionTableBody"></tbody>
+                  </table>
+                </div>
+                <p class="table-empty" id="transactionEmptyState">No sandbox transactions match the current filters.</p>
+              </section>
+            </section>
+
+            <section class="dashboard-view" data-view-panel="receipts">
+              <div class="receipts-grid">
+                <section class="dashboard-panel">
+                  <div class="section-head">
+                    <p class="section-kicker">Receipts</p>
+                    <h3>Available sandbox receipts</h3>
+                  </div>
+                  <div id="receiptList" class="receipt-list"></div>
+                </section>
+
+                <section class="dashboard-panel">
+                  <div class="section-head section-head-spread">
+                    <div>
+                      <p class="section-kicker">Receipt preview</p>
+                      <h3>Sandbox receipt viewer</h3>
+                    </div>
+                    <p class="section-meta" id="receiptMeta">Select a processed transaction</p>
+                  </div>
+                  <div id="receiptPreview" class="receipt-preview"></div>
+                </section>
+              </div>
+            </section>
+
+            <section class="dashboard-view" data-view-panel="developer">
+              <div class="developer-grid">
+                <section class="dashboard-panel" id="lab">
+                  <div class="section-head section-head-spread">
+                    <div>
+                      <p class="section-kicker">Integration</p>
+                      <h3>Request lab</h3>
+                    </div>
+                    <p class="section-meta" id="labHint">Select an account and run a sandbox flow.</p>
+                  </div>
+
+                  <form id="labForm" class="lab-grid">
+                    <label>
+                      <span>Sandbox account</span>
+                      <select id="labAccount" name="labAccount"></select>
+                    </label>
+                    <label>
+                      <span>Preset</span>
+                      <select id="labPreset" name="labPreset">
+                        <option value="token">Issue OAuth token</option>
+                        <option value="accounts">List accounts</option>
+                        <option value="preview">Preview send money</option>
+                        <option value="send">Create send money</option>
+                        <option value="otp">Issue OTP challenge</option>
+                        <option value="verify">Verify OTP</option>
+                        <option value="finalize">Finalize transfer</option>
+                        <option value="history">Get history</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Amount</span>
+                      <input id="labAmount" name="amount" type="number" min="1" step="0.01" value="275" />
+                    </label>
+                    <label>
+                      <span>Currency</span>
+                      <select id="labCurrency" name="currency">
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </label>
+                    <label class="span-two">
+                      <span>Recipient email</span>
+                      <input id="labRecipient" name="recipientEmail" type="email" value="treasury.ops@sandbox.skrill.local" />
+                    </label>
+                    <label class="span-two">
+                      <span>Message</span>
+                      <input id="labMessage" name="message" type="text" value="Sandbox payout rehearsal" />
+                    </label>
+                    <label>
+                      <span>OTP code</span>
+                      <input id="labOtp" name="otp" type="text" inputmode="numeric" placeholder="Auto-filled from local preview" />
+                    </label>
+                    <div class="lab-actions">
+                      <button class="button control-button" type="submit">Run preset</button>
+                      <button class="button ghost-button" type="button" id="copyCurlButton">Copy cURL</button>
+                    </div>
+                  </form>
+
+                  <div class="code-grid">
+                    <section>
+                      <div class="section-head compact-head">
+                        <p class="section-kicker">Generated cURL</p>
+                      </div>
+                      <pre id="curlPreview" class="code-block"></pre>
+                    </section>
+                    <section>
+                      <div class="section-head compact-head">
+                        <p class="section-kicker" id="responseMeta">No request yet</p>
+                      </div>
+                      <pre id="responsePreview" class="code-block empty">Run a preset to inspect the mock response.</pre>
+                    </section>
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="receipt-modal" id="receiptModal" hidden>
+      <div class="receipt-modal__backdrop" data-close-receipt-modal="true"></div>
+      <div class="receipt-modal__dialog">
+        <div class="receipt-modal__header">
+          <div>
+            <p class="section-kicker">Sandbox receipt</p>
+            <h3 id="receiptModalTitle">Receipt preview</h3>
+          </div>
+          <button class="receipt-modal__close" id="closeReceiptModal" type="button" aria-label="Close receipt">
+            ×
+          </button>
+        </div>
+        <div id="receiptModalBody"></div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
