@@ -2261,6 +2261,37 @@ body.sidebar-open .dashboard-sidebar-backdrop {
   color: var(--ink);
 }
 
+.transfer-support-note {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(161, 7, 133, 0.14);
+  background: linear-gradient(180deg, rgba(161, 7, 133, 0.05) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.transfer-support-note__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8e6b84;
+}
+
+.transfer-support-note p {
+  margin: 0;
+  color: #4b4b56;
+  line-height: 1.6;
+}
+
+.transfer-support-note a {
+  color: #81115f;
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 .transfer-summary {
   display: grid;
   gap: 12px;
