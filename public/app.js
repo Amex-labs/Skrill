@@ -88,6 +88,7 @@ const elements = {
   curlPreview: document.getElementById("curlPreview"),
   responsePreview: document.getElementById("responsePreview"),
   responseMeta: document.getElementById("responseMeta"),
+  otpMailboxPanel: document.getElementById("otpMailboxPanel"),
   otpMailboxList: document.getElementById("otpMailboxList"),
   otpMailboxMeta: document.getElementById("otpMailboxMeta"),
   txSearch: document.getElementById("txSearch"),
@@ -1398,6 +1399,36 @@ function renderOtpMailbox(entries) {
   }).join("");
 }
 
+function revealOtpMailbox() {
+  const activeAccount = getActiveAccount();
+  if (activeAccount && elements.labAccount) {
+    elements.labAccount.value = activeAccount.id;
+  }
+  if (elements.labPreset) {
+    elements.labPreset.value = state.labContext.otpCode ? "verify" : "otp";
+  }
+  if (elements.labOtp && state.labContext.otpCode) {
+    elements.labOtp.value = state.labContext.otpCode;
+  }
+
+  setActiveView("developer");
+  updateLabHint();
+  updateCurlPreview();
+
+  if (!elements.otpMailboxPanel) {
+    return;
+  }
+
+  elements.otpMailboxPanel.classList.remove("is-highlighted");
+  void elements.otpMailboxPanel.offsetWidth;
+  elements.otpMailboxPanel.classList.add("is-highlighted");
+  elements.otpMailboxPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  window.setTimeout(() => {
+    elements.otpMailboxPanel?.classList.remove("is-highlighted");
+  }, 2200);
+}
+
 function renderUnsupported(items) {
   if (!elements.unsupportedList) {
     return;
@@ -1653,8 +1684,9 @@ async function handleTransferOtpIssue() {
     ingestLabContext(result.payload);
     elements.transferOtp.value = result.payload.sandboxOtp || "";
     showResponse(plan.responseLabel, result.status, result.payload);
-    elements.transferFeedback.textContent = `Confirmation code generated. Use ${result.payload.sandboxOtp} to confirm the transfer, or open Developer tools to review it in the local OTP mailbox.`;
+    elements.transferFeedback.textContent = `Confirmation code generated. Opening Developer tools so you can review the code in the local OTP mailbox.`;
     await refreshSnapshot();
+    revealOtpMailbox();
     applyDisplayBranding();
   } catch (error) {
     elements.transferFeedback.textContent = error.message;
