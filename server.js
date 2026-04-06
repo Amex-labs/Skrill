@@ -16,6 +16,7 @@ const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_TRANSACTIONS = 120;
 const MAX_REQUESTS = 160;
 const MAX_ACTIVITY = 180;
+const MAX_OTP_MAILBOX = 80;
 
 const SUPPORTED_ENDPOINTS = [
   {
@@ -114,6 +115,12 @@ function createId(prefix, length = 10) {
 
 function cleanState(candidate) {
   const base = candidate && typeof candidate === "object" ? candidate : {};
+  const transactions = Array.isArray(base.transactions)
+    ? base.transactions.map((transaction) => ({
+        ...transaction,
+        receipt: transaction.receipt || (transaction.status === "PROCESSED" ? createReceipt(transaction) : null)
+      }))
+    : [];
   return {
     version: 1,
     createdAt: base.createdAt || nowIso(),
@@ -123,14 +130,12 @@ function cleanState(candidate) {
           ...account
         }))
       : [],
-    transactions: Array.isArray(base.transactions)
-      ? base.transactions.map((transaction) => ({
-          ...transaction,
-          receipt: transaction.receipt || (transaction.status === "PROCESSED" ? createReceipt(transaction) : null)
-        }))
-      : [],
+    transactions,
     requests: Array.isArray(base.requests) ? base.requests : [],
     activity: Array.isArray(base.activity) ? base.activity : [],
+    otpMailbox: Array.isArray(base.otpMailbox) && base.otpMailbox.length
+      ? base.otpMailbox
+      : deriveOtpMailboxFromTransactions(transactions),
     tokens: Array.isArray(base.tokens) ? base.tokens : []
   };
 }
@@ -209,6 +214,30 @@ function createReceipt(transaction) {
   };
 }
 
+function deriveOtpMailboxFromTransactions(transactions) {
+  return transactions
+    .filter((transaction) => transaction.challenge && transaction.challenge.otpCode)
+    .map((transaction) => ({
+      id: createId("otp_"),
+      transactionId: transaction.id,
+      accountId: transaction.senderAccountId,
+      accountEmail: null,
+      otpCode: transaction.challenge.otpCode,
+      expiresAt: transaction.challenge.expiresAt || transaction.updatedAt || transaction.createdAt,
+      eventId: transaction.challenge.eventId || "",
+      createdAt: transaction.challenge.verifiedAt || transaction.updatedAt || transaction.createdAt,
+      status: transaction.status === "PROCESSED"
+        ? "FINALIZED"
+        : transaction.status === "OTP_VERIFIED"
+          ? "VERIFIED"
+          : "GENERATED",
+      verifiedAt: transaction.challenge.verifiedAt || null,
+      finalizedAt: transaction.executedAt || null
+    }))
+    .sort((left, right) => Date.parse(right.createdAt || 0) - Date.parse(left.createdAt || 0))
+    .slice(0, MAX_OTP_MAILBOX);
+}
+
 function createSeedState() {
   const merchant = seedAccount({
     ownerName: "Mercury Merchant Demo",
@@ -262,6 +291,7 @@ function createSeedState() {
     transactions: seededTransactions,
     requests: [],
     tokens: [],
+    otpMailbox: [],
     activity: [
       createActivity("sandbox.ready", "Local Skrill sandbox initialized.", {
         tone: "good"
@@ -415,6 +445,15 @@ function serializeTransaction(transaction) {
   };
 }
 
+function serializeOtpMailboxEntry(entry) {
+  const account = entry.accountId ? getAccount(entry.accountId) : null;
+  return {
+    ...entry,
+    accountName: account ? account.ownerName : "Unknown account",
+    accountEmail: entry.accountEmail || (account ? account.email : null)
+  };
+}
+
 function trimRequests() {
   state.requests = state.requests.slice(0, MAX_REQUESTS);
 }
@@ -456,6 +495,7 @@ function buildSnapshot() {
     transactions: state.transactions.map(serializeTransaction),
     requests: state.requests,
     activity: state.activity,
+    otpMailbox: state.otpMailbox.map(serializeOtpMailboxEntry),
     endpoints: SUPPORTED_ENDPOINTS,
     unsupportedFeatures: UNSUPPORTED_FEATURES,
     latestChallenge: latestChallenge ? serializeTransaction(latestChallenge) : null
@@ -546,6 +586,27 @@ function recordRequest(entry) {
   };
   state.requests.unshift(request);
   trimRequests();
+}
+
+function pushOtpMailboxEntry(entry) {
+  state.otpMailbox.unshift({
+    id: createId("otp_"),
+    createdAt: nowIso(),
+    status: "GENERATED",
+    ...entry
+  });
+  state.otpMailbox = state.otpMailbox.slice(0, MAX_OTP_MAILBOX);
+}
+
+function updateOtpMailboxEntry(transactionId, otpCode, updates) {
+  const target = state.otpMailbox.find((entry) => {
+    return entry.transactionId === transactionId
+      && (!otpCode || entry.otpCode === otpCode);
+  });
+
+  if (target) {
+    Object.assign(target, updates);
+  }
 }
 
 function createToken(accountId) {
@@ -1095,6 +1156,15 @@ async function handleSandbox(req, res, url) {
       sandboxOtp: transaction.challenge.otpCode
     };
 
+    pushOtpMailboxEntry({
+      transactionId: transaction.id,
+      accountId: account.id,
+      accountEmail: account.email,
+      otpCode: transaction.challenge.otpCode,
+      expiresAt: transaction.challenge.expiresAt,
+      eventId: transaction.challenge.eventId
+    });
+
     pushActivity("sca.otp_sent", `Issued sandbox OTP for ${transaction.id}.`, {
       tone: "neutral",
       transactionId: transaction.id
@@ -1145,6 +1215,10 @@ async function handleSandbox(req, res, url) {
     transaction.status = "OTP_VERIFIED";
     transaction.updatedAt = nowIso();
     transaction.challenge.verifiedAt = nowIso();
+    updateOtpMailboxEntry(transaction.id, transaction.challenge.otpCode, {
+      status: "VERIFIED",
+      verifiedAt: transaction.challenge.verifiedAt
+    });
 
     const response = {
       success: true,
@@ -1201,6 +1275,10 @@ async function handleSandbox(req, res, url) {
     transaction.status = "PROCESSED";
     transaction.updatedAt = nowIso();
     applyTransfer(transaction);
+    updateOtpMailboxEntry(transaction.id, transaction.challenge ? transaction.challenge.otpCode : "", {
+      status: "FINALIZED",
+      finalizedAt: transaction.executedAt || transaction.updatedAt
+    });
 
     const response = {
       id: transaction.id,

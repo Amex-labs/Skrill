@@ -88,6 +88,8 @@ const elements = {
   curlPreview: document.getElementById("curlPreview"),
   responsePreview: document.getElementById("responsePreview"),
   responseMeta: document.getElementById("responseMeta"),
+  otpMailboxList: document.getElementById("otpMailboxList"),
+  otpMailboxMeta: document.getElementById("otpMailboxMeta"),
   txSearch: document.getElementById("txSearch"),
   txStatusFilter: document.getElementById("txStatusFilter"),
   txDirectionFilter: document.getElementById("txDirectionFilter"),
@@ -299,6 +301,7 @@ function applySnapshot(snapshot) {
   renderTransactionsTable();
   renderReceiptList(snapshot.transactions);
   renderReceiptPreview(snapshot.transactions);
+  renderOtpMailbox(snapshot.otpMailbox || []);
   renderEvents(elements.requestList, snapshot.requests, "request");
   renderEvents(elements.activityList, snapshot.activity, "activity");
   renderUnsupported(snapshot.unsupportedFeatures || []);
@@ -777,6 +780,18 @@ function getStatusTone(status) {
   }
 
   if (status === "SCA_CHALLENGE" || status === "OTP_VERIFIED") {
+    return "warn";
+  }
+
+  return "dark";
+}
+
+function getOtpMailboxTone(status) {
+  if (status === "FINALIZED") {
+    return "good";
+  }
+
+  if (status === "VERIFIED") {
     return "warn";
   }
 
@@ -1263,6 +1278,71 @@ function renderEvents(container, entries, mode) {
   }).join("");
 }
 
+function renderOtpMailbox(entries) {
+  if (!elements.otpMailboxList) {
+    return;
+  }
+
+  const allEntries = Array.isArray(entries) ? entries : [];
+  const selectedAccount = getSelectedAccount();
+  const scopedEntries = selectedAccount
+    ? allEntries.filter((entry) => entry.accountId === selectedAccount.id)
+    : allEntries;
+
+  if (elements.otpMailboxMeta) {
+    elements.otpMailboxMeta.textContent = selectedAccount
+      ? `Showing OTP events for ${getDisplayAccountName(selectedAccount)}.`
+      : "OTP codes generated in local testing appear here only.";
+  }
+
+  if (!scopedEntries.length) {
+    elements.otpMailboxList.innerHTML = `
+      <div class="receipt-empty otp-mailbox-empty">
+        No OTP codes have been generated${selectedAccount ? " for this account" : ""} yet.
+      </div>
+    `;
+    return;
+  }
+
+  elements.otpMailboxList.innerHTML = scopedEntries.slice(0, 12).map((entry) => {
+    const accountLabel = entry.accountEmail && isPrimaryAccountEmail(entry.accountEmail)
+      ? "Gabriele Navisi"
+      : entry.accountName || "Unknown account";
+
+    return `
+      <article class="otp-mailbox-item">
+        <div class="otp-mailbox-item__head">
+          <div>
+            <p class="metric-label">Transfer ID</p>
+            <strong>${escapeHtml(entry.transactionId || "Unavailable")}</strong>
+          </div>
+          <span class="status-pill ${getOtpMailboxTone(entry.status)}">${escapeHtml(formatStatusLabel(entry.status || "GENERATED"))}</span>
+        </div>
+        <div class="otp-mailbox-item__grid">
+          <div class="otp-mailbox-item__cell">
+            <span class="metric-label">OTP code</span>
+            <strong class="otp-mailbox-item__otp">${escapeHtml(entry.otpCode || "Pending")}</strong>
+          </div>
+          <div class="otp-mailbox-item__cell">
+            <span class="metric-label">Issued</span>
+            <strong>${escapeHtml(formatDate(entry.createdAt))}</strong>
+          </div>
+          <div class="otp-mailbox-item__cell">
+            <span class="metric-label">Account</span>
+            <strong>${escapeHtml(accountLabel)}</strong>
+            <span>${escapeHtml(entry.accountEmail || "Unknown account")}</span>
+          </div>
+          <div class="otp-mailbox-item__cell">
+            <span class="metric-label">Expiry</span>
+            <strong>${escapeHtml(formatDate(entry.expiresAt))}</strong>
+            <span class="event-meta">${escapeHtml(entry.eventId || "No event ID")}</span>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderUnsupported(items) {
   if (!elements.unsupportedList) {
     return;
@@ -1584,6 +1664,7 @@ async function handleTransferComplete() {
 function handleLabControlChange() {
   updateLabHint();
   updateCurlPreview();
+  renderOtpMailbox(state.snapshot ? state.snapshot.otpMailbox || [] : []);
   applyDisplayBranding();
 }
 
