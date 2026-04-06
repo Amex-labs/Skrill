@@ -2619,17 +2619,6 @@ body.sidebar-open .dashboard-sidebar-backdrop {
   letter-spacing: 0.1em;
 }
 
-.developer-mailbox-panel {
-  scroll-margin-top: 112px;
-}
-
-.developer-mailbox-panel.is-highlighted {
-  border-color: rgba(161, 7, 133, 0.34);
-  box-shadow:
-    0 0 0 1px rgba(161, 7, 133, 0.14),
-    0 24px 44px rgba(101, 0, 72, 0.12);
-}
-
 .otp-mailbox-empty {
   margin-top: 18px;
 }
