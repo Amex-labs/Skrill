@@ -406,14 +406,7 @@ function openAuthModal(mode = "login") {
   elements.authModal.hidden = false;
   elements.authModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("auth-modal-open");
-
-  window.setTimeout(() => {
-    if (state.authMode === "register") {
-      document.getElementById("ownerName")?.focus();
-      return;
-    }
-    elements.loginEmail?.focus();
-  }, 40);
+  syncAuthViewport();
 }
 
 function closeAuthModal() {
@@ -442,6 +435,33 @@ function setAuthMode(mode = "login") {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+
+  if (document.body.classList.contains("auth-modal-open")) {
+    syncAuthViewport();
+  }
+}
+
+function syncAuthViewport() {
+  if (!elements.authModal) {
+    return;
+  }
+
+  const surface = elements.authModal.querySelector(".login-stage__surface");
+  const loginCard = elements.authModal.querySelector(".login-card");
+  const focusTarget = state.authMode === "register"
+    ? document.getElementById("ownerName")
+    : elements.loginEmail;
+  const isPhoneLayout = window.matchMedia("(max-width: 720px)").matches;
+
+  window.setTimeout(() => {
+    if (surface) {
+      surface.scrollTo({ top: 0, behavior: isPhoneLayout ? "smooth" : "auto" });
+    }
+    if (isPhoneLayout && loginCard) {
+      loginCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    focusTarget?.focus({ preventScroll: true });
+  }, 40);
 }
 
 function updateTopbarContext() {

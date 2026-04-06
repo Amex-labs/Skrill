@@ -1063,6 +1063,9 @@ body.is-authenticated .header-session {
   inset: 0;
   z-index: 70;
   display: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at 18% 18%, rgba(232, 176, 221, 0.18), transparent 22%),
     radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.1), transparent 18%),
@@ -1080,15 +1083,19 @@ body.is-authenticated .header-session {
 .login-stage__surface {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
+  min-height: 100svh;
   display: grid;
   grid-template-rows: auto 1fr;
+  overflow-y: auto;
 }
 
 .login-stage__bar {
   width: 100%;
   padding: 0 clamp(24px, 4vw, 34px);
   min-height: 82px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3098,30 +3105,45 @@ body.sidebar-open .dashboard-sidebar-backdrop {
 
   .login-layout {
     width: min(100vw - 24px, 860px);
-    padding: 34px 12px 26px;
-    gap: 22px;
+    padding: 18px 12px 28px;
+    gap: 16px;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .login-card {
+    order: 1;
+    width: min(100%, 460px);
+    justify-self: center;
     padding: 22px 20px 22px;
     border-radius: 24px;
   }
 
   .auth-showcase {
+    order: 2;
+    width: min(100%, 460px);
+    justify-self: center;
     gap: 14px;
   }
 
   .auth-showcase h2 {
-    font-size: 40px;
+    font-size: 34px;
+    line-height: 1;
   }
 
   .auth-showcase__lead {
-    font-size: 18px;
+    font-size: 17px;
+    line-height: 1.6;
   }
 
   .auth-showcase__card {
     min-height: auto;
     padding: 18px;
+  }
+
+  .auth-showcase__grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .dashboard-topbar--context {
@@ -3315,6 +3337,19 @@ body.sidebar-open .dashboard-sidebar-backdrop {
 }
 
 @media (max-width: 560px) {
+  .login-stage__surface {
+    min-height: 100dvh;
+  }
+
+  .login-stage__bar {
+    min-height: 68px;
+    padding-inline: 12px;
+  }
+
+  .login-stage__bar-actions {
+    gap: 6px;
+  }
+
   .otp-mailbox-item__grid {
     grid-template-columns: 1fr;
   }
@@ -3361,15 +3396,41 @@ body.sidebar-open .dashboard-sidebar-backdrop {
   }
 
   .auth-showcase__grid {
-    gap: 12px;
+    display: none;
   }
 
   .auth-showcase h2 {
-    font-size: 34px;
+    font-size: 30px;
   }
 
   .login-card {
-    padding: 20px 18px;
+    padding: 18px 16px 20px;
+    border-radius: 20px;
+  }
+
+  .auth-tabs {
+    margin-bottom: 18px;
+  }
+
+  .auth-tab {
+    min-height: 44px;
+  }
+
+  .login-copy p,
+  .auth-switch,
+  .login-feedback {
+    font-size: 15px;
+  }
+
+  input,
+  select {
+    min-height: 52px;
+    padding-inline: 14px;
+  }
+
+  .passkey-button,
+  .sandbox-submit {
+    min-height: 50px;
   }
 
   .dashboard-topbar__copy h2 {
