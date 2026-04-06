@@ -118,7 +118,7 @@ const presetHints = {
   token: "Issue a local bearer token with the sandbox client credentials.",
   accounts: "Use a bearer token to list all sandbox accounts and balances.",
   preview: "Calculate fees and confirm a transfer can be processed safely.",
-  send: "Create a transfer. Amounts of 250 or more trigger local SCA.",
+  send: "Create a transfer. Local transfers from 10 and international transfers from 20 open confirmation.",
   otp: "Issue a local OTP code for the latest pending challenge.",
   verify: "Verify the OTP code against the pending challenge.",
   finalize: "Finalize the verified send-money flow and settle the mock funds.",
@@ -139,6 +139,9 @@ const TRANSFER_FEE_GUIDE = {
     hint: "External or cross-country recipient"
   }
 };
+
+const LOCAL_SCA_THRESHOLD = 10;
+const INTERNATIONAL_SCA_THRESHOLD = 20;
 
 document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
@@ -813,8 +816,8 @@ function renderTransferWorkspace(accounts, transactions) {
   const hasAccount = Boolean(account);
   elements.previewTransferButton.disabled = !hasAccount;
   elements.submitTransferButton.disabled = !hasAccount;
-  elements.issueTransferOtpButton.disabled = !pendingChallenge;
-  elements.completeTransferButton.disabled = !pendingChallenge;
+  elements.issueTransferOtpButton.disabled = !hasAccount;
+  elements.completeTransferButton.disabled = !hasAccount;
 
   if (!hasAccount) {
     elements.transferStatus.textContent = "Sign in to an account wallet before sending funds.";
@@ -853,10 +856,11 @@ function renderTransferWorkspace(accounts, transactions) {
     elements.transferChallengeCopy.textContent = hasOtpMailboxEntry
       ? "Account Authentication fee require. International Transfers of 20 or more open a confirmation step here."
       : "Transfers of 10 or more open a confirmation step here.";
-    elements.transferOtp.value = pendingChallenge.challenge.otpCode || elements.transferOtp.value || "";
+    if (pendingChallenge.challenge.otpCode) {
+      elements.transferOtp.value = pendingChallenge.challenge.otpCode;
+    }
   } else {
     elements.transferChallengeCopy.textContent = "Transfers of 10 or more open a confirmation step here.";
-    elements.transferOtp.value = "";
   }
 
   if (!state.transferPreview) {
@@ -920,11 +924,13 @@ function buildIdleTransferSummaryMarkup(account, recentOutgoing = null) {
 }
 
 function buildTransferSummaryMarkup(account, preview) {
-  const requiresSca = Number(preview.amount || 0) >= 250 || Boolean(preview.scaRequired);
+  const scaThreshold = getTransferScaThreshold(preview);
+  const requiresSca = Boolean(preview.scaRequired) || Number(preview.amount || 0) >= scaThreshold;
   const canProcess = preview.canProcess !== false;
   const statusText = preview.stage || (preview.status ? preview.status.replaceAll("_", " ") : "PREVIEW");
   const displayName = getDisplayAccountName(account);
   const previewCurrency = preview.currency || account.currency;
+  const scaCopy = getTransferScaCopy(preview.feeScope, requiresSca);
 
   return `
     <article class="transfer-summary-card">
@@ -954,7 +960,7 @@ function buildTransferSummaryMarkup(account, preview) {
         <div class="transfer-summary-row">
           <span class="metric-label">Local SCA</span>
           <strong>${requiresSca ? "Required" : "Not required"}</strong>
-          <span>${requiresSca ? "Amounts of 250 or more trigger confirmation." : "This transfer can settle immediately."}</span>
+          <span>${escapeHtml(scaCopy)}</span>
         </div>
       </div>
       ${buildTransferFeeGuideMarkup(previewCurrency, preview)}
@@ -976,6 +982,30 @@ function formatFeePercent(rate) {
   const parsed = Number(rate);
   const percentage = (Number.isFinite(parsed) ? parsed : 0) * 100;
   return `${percentage.toFixed(1).replace(/\.0$/, "")}%`;
+}
+
+function getTransferScaThreshold(value) {
+  if (value && typeof value === "object") {
+    const explicitThreshold = Number(value.scaThreshold);
+    if (Number.isFinite(explicitThreshold) && explicitThreshold > 0) {
+      return explicitThreshold;
+    }
+  }
+
+  const scope = typeof value === "string" ? value : String(value && value.feeScope ? value.feeScope : "");
+  return scope.toUpperCase() === "INTERNATIONAL"
+    ? INTERNATIONAL_SCA_THRESHOLD
+    : LOCAL_SCA_THRESHOLD;
+}
+
+function getTransferScaCopy(scope, requiresSca) {
+  const threshold = getTransferScaThreshold(scope);
+  if (!requiresSca) {
+    return `This transfer can settle immediately at the current amount.`;
+  }
+  return String(scope || "").toUpperCase() === "INTERNATIONAL"
+    ? `International transfers of ${threshold} or more trigger confirmation.`
+    : `Transfers of ${threshold} or more trigger confirmation.`;
 }
 
 function getClientTransferFeeRule(scope, preview = null) {
@@ -1603,7 +1633,7 @@ async function handleTransferOtpIssue() {
     ingestLabContext(result.payload);
     elements.transferOtp.value = result.payload.sandboxOtp || "";
     showResponse(plan.responseLabel, result.status, result.payload);
-    elements.transferFeedback.textContent = `Confirmation code generated. Use ${result.payload.sandboxOtp} to confirm the transfer.`;
+    elements.transferFeedback.textContent = `Confirmation code generated. Use ${result.payload.sandboxOtp} to confirm the transfer, or open Developer tools to review it in the local OTP mailbox.`;
     await refreshSnapshot();
     applyDisplayBranding();
   } catch (error) {
@@ -1805,7 +1835,7 @@ function buildPresetPlan(preset, account) {
       };
     case "otp":
       if (!slipId) {
-        throw new Error("Create a send-money flow above 250 first so the sandbox can open an SCA challenge.");
+        throw new Error("Send a transfer that opens confirmation first. Transfers from 10, and international transfers from 20, can generate an OTP.");
       }
       return {
         preset,
@@ -2075,7 +2105,7 @@ function updateLabHint() {
   const hasChallenge = Boolean(state.labContext.slipId);
 
   if ((preset === "otp" || preset === "verify" || preset === "finalize") && !hasChallenge) {
-    elements.labHint.textContent = "Create a sandbox transfer of 250 or more first to generate a local SCA challenge.";
+    elements.labHint.textContent = "Create a transfer that opens confirmation first. Local transfers start at 10, and international transfers start at 20.";
     return;
   }
 

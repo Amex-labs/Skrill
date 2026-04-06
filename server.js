@@ -17,6 +17,8 @@ const MAX_TRANSACTIONS = 120;
 const MAX_REQUESTS = 160;
 const MAX_ACTIVITY = 180;
 const MAX_OTP_MAILBOX = 80;
+const LOCAL_SCA_THRESHOLD = 10;
+const INTERNATIONAL_SCA_THRESHOLD = 20;
 
 const SUPPORTED_ENDPOINTS = [
   {
@@ -367,6 +369,21 @@ function getTransferFeeMessage(scope) {
     : "Recipient is external or outside the local country profile, so the international transfer fee applies.";
 }
 
+function getTransferScaThreshold(scope) {
+  return normalizeFeeScope(scope) === "INTERNATIONAL"
+    ? INTERNATIONAL_SCA_THRESHOLD
+    : LOCAL_SCA_THRESHOLD;
+}
+
+function getTransferScaMeta(amount, feeScope, recipientEmail) {
+  const scaThreshold = getTransferScaThreshold(feeScope);
+  const normalizedRecipient = String(recipientEmail || "").trim().toLowerCase();
+  return {
+    scaThreshold,
+    scaRequired: Number(amount) >= scaThreshold || normalizedRecipient.endsWith("@review.test")
+  };
+}
+
 function resolveTransferScope(sender, recipient) {
   if (
     sender &&
@@ -431,6 +448,7 @@ function serializeTransaction(transaction) {
   return {
     ...transaction,
     totalDebit: roundCurrency(transaction.amount + transaction.feeAmount),
+    scaThreshold: getTransferScaThreshold(feeMeta.feeScope),
     senderName: sender ? sender.ownerName : "Unknown sender",
     senderEmail: sender ? sender.email : "unknown@sandbox",
     recipientName: recipient ? recipient.ownerName : "External recipient",
@@ -977,12 +995,15 @@ async function handleSandbox(req, res, url) {
     }
 
     const fees = feePreview(amount, sender, recipientEmail);
+    const scaMeta = getTransferScaMeta(amount, fees.feeScope, recipientEmail);
     const senderState = serializeAccount(sender);
     const response = {
       accountId: sender.id,
       amount,
       currency,
       recipientEmail,
+      scaThreshold: scaMeta.scaThreshold,
+      scaRequired: scaMeta.scaRequired,
       feeScope: fees.feeScope,
       feeLabel: fees.feeLabel,
       feeRate: fees.feeRate,
@@ -1033,12 +1054,13 @@ async function handleSandbox(req, res, url) {
     }
 
     const fees = feePreview(amount, sender, recipientEmail);
+    const scaMeta = getTransferScaMeta(amount, fees.feeScope, recipientEmail);
     const availableBalance = serializeAccount(sender).available;
     if (availableBalance < fees.totalDebit) {
       throw httpError(409, "Insufficient sandbox funds for this mock transfer.");
     }
 
-    const requiresSca = amount >= 250 || recipientEmail.endsWith("@review.test");
+    const requiresSca = scaMeta.scaRequired;
     const challenge = requiresSca
       ? {
           eventId: createId("evt_"),
@@ -1056,6 +1078,7 @@ async function handleSandbox(req, res, url) {
       recipientEmail,
       recipientAccountId: null,
       amount,
+      scaThreshold: scaMeta.scaThreshold,
       feeScope: fees.feeScope,
       feeRate: fees.feeRate,
       fixedFeeAmount: fees.fixedFeeAmount,
