@@ -2292,6 +2292,10 @@ body.sidebar-open .dashboard-sidebar-backdrop {
   text-underline-offset: 3px;
 }
 
+.transfer-support-note + .transfer-challenge-note {
+  margin-top: 16px;
+}
+
 .transfer-summary {
   display: grid;
   gap: 12px;

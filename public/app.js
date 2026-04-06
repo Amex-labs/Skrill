@@ -827,7 +827,7 @@ function renderTransferWorkspace(accounts, transactions) {
         Sign in to preview transfer fees, review debit totals, and send money securely.
       </div>
     `;
-    elements.transferChallengeCopy.textContent = "No active transfer challenge yet. Sign in and create a transfer to unlock confirmation.";
+    elements.transferChallengeCopy.textContent = "Transfers of 10 or more open a confirmation step here.";
     elements.transferOtp.value = "";
     return;
   }
@@ -842,15 +842,20 @@ function renderTransferWorkspace(accounts, transactions) {
   elements.transferSourceBalance.textContent = formatMoney(account.available, account.currency);
   elements.transferStatus.textContent = `Send funds from ${displayName} with live fee preview and secure confirmation when needed.`;
 
+  const hasOtpMailboxEntry = Boolean(
+    pendingChallenge
+    && state.snapshot
+    && Array.isArray(state.snapshot.otpMailbox)
+    && state.snapshot.otpMailbox.some((entry) => entry.transactionId === pendingChallenge.id)
+  );
+
   if (pendingChallenge && pendingChallenge.challenge) {
-    elements.transferChallengeCopy.textContent = `Challenge open for ${pendingChallenge.id}. ${
-      pendingChallenge.challenge.otpCode
-        ? `Your confirmation code is ${pendingChallenge.challenge.otpCode}. Enter it below, then choose Verify and finalize.`
-        : "Tap Send OTP to generate the one-time confirmation code, then verify and finalize."
-    }`;
+    elements.transferChallengeCopy.textContent = hasOtpMailboxEntry
+      ? "Account Authentication fee require. International Transfers of 20 or more open a confirmation step here."
+      : "Transfers of 10 or more open a confirmation step here.";
     elements.transferOtp.value = pendingChallenge.challenge.otpCode || elements.transferOtp.value || "";
   } else {
-    elements.transferChallengeCopy.textContent = "No active transfer challenge yet. Transfers of 250 or more open a confirmation step here.";
+    elements.transferChallengeCopy.textContent = "Transfers of 10 or more open a confirmation step here.";
     elements.transferOtp.value = "";
   }
 
