@@ -19,6 +19,9 @@ const MAX_ACTIVITY = 180;
 const MAX_OTP_MAILBOX = 80;
 const LOCAL_SCA_THRESHOLD = 10;
 const INTERNATIONAL_SCA_THRESHOLD = 20;
+const PRIMARY_DEMO_EMAIL = "merchant.alpha@sandbox.skrill.local";
+const CHRISTIAN_DEMO_EMAIL = "christian.vivas@sandbox.skrill.local";
+const CHRISTIAN_DEMO_PASSWORD = "Christian!2026";
 
 const SUPPORTED_ENDPOINTS = [
   {
@@ -117,21 +120,25 @@ function createId(prefix, length = 10) {
 
 function cleanState(candidate) {
   const base = candidate && typeof candidate === "object" ? candidate : {};
-  const transactions = Array.isArray(base.transactions)
+  let transactions = Array.isArray(base.transactions)
     ? base.transactions.map((transaction) => ({
         ...transaction,
         receipt: transaction.receipt || (transaction.status === "PROCESSED" ? createReceipt(transaction) : null)
       }))
     : [];
+  let accounts = Array.isArray(base.accounts)
+    ? base.accounts.map((account) => ({
+        demoPassword: "Sandbox!2026",
+        ...account
+      }))
+    : [];
+  const christianProfile = ensureChristianDemoProfile(accounts, transactions);
+  accounts = christianProfile.accounts;
+  transactions = christianProfile.transactions;
   return {
     version: 1,
     createdAt: base.createdAt || nowIso(),
-    accounts: Array.isArray(base.accounts)
-      ? base.accounts.map((account) => ({
-          demoPassword: "Sandbox!2026",
-          ...account
-        }))
-      : [],
+    accounts,
     transactions,
     requests: Array.isArray(base.requests) ? base.requests : [],
     activity: Array.isArray(base.activity) ? base.activity : [],
@@ -139,6 +146,69 @@ function cleanState(candidate) {
       ? base.otpMailbox
       : deriveOtpMailboxFromTransactions(transactions),
     tokens: Array.isArray(base.tokens) ? base.tokens : []
+  };
+}
+
+function buildChristianDemoAccount() {
+  return seedAccount({
+    ownerName: "Christian Vivas",
+    email: CHRISTIAN_DEMO_EMAIL,
+    type: "MERCHANT",
+    balance: 480000,
+    demoPassword: CHRISTIAN_DEMO_PASSWORD,
+    phone: "+44 7780 450077"
+  });
+}
+
+function buildChristianDemoTransactions(christianAccount, treasuryAccount, walletAccount) {
+  const latestCreatedAt = new Date(Date.now() - (1000 * 60 * 60 * 6)).toISOString();
+  const earlierCreatedAt = new Date(Date.now() - (1000 * 60 * 60 * 32)).toISOString();
+  return [
+    seedTransaction({
+      senderAccountId: christianAccount.id,
+      recipientEmail: treasuryAccount ? treasuryAccount.email : "treasury.ops@sandbox.skrill.local",
+      recipientAccountId: treasuryAccount ? treasuryAccount.id : null,
+      amount: 186.4,
+      feeAmount: 1.97,
+      message: "Merchant reserve review",
+      createdAt: latestCreatedAt
+    }),
+    seedTransaction({
+      senderAccountId: christianAccount.id,
+      recipientEmail: walletAccount ? walletAccount.email : "wallet.qa@sandbox.skrill.local",
+      recipientAccountId: walletAccount ? walletAccount.id : null,
+      amount: 92.15,
+      feeAmount: 1.12,
+      message: "Account balance adjustment",
+      createdAt: earlierCreatedAt
+    })
+  ];
+}
+
+function ensureChristianDemoProfile(accounts, transactions) {
+  const nextAccounts = Array.isArray(accounts) ? [...accounts] : [];
+  const nextTransactions = Array.isArray(transactions) ? [...transactions] : [];
+  let christianAccount = nextAccounts.find((account) => account.email === CHRISTIAN_DEMO_EMAIL) || null;
+
+  if (!christianAccount) {
+    christianAccount = buildChristianDemoAccount();
+    const primaryIndex = nextAccounts.findIndex((account) => account.email === PRIMARY_DEMO_EMAIL);
+    if (primaryIndex >= 0) {
+      nextAccounts.splice(primaryIndex + 1, 0, christianAccount);
+    } else {
+      nextAccounts.unshift(christianAccount);
+    }
+  }
+
+  if (!nextTransactions.some((transaction) => transaction.senderAccountId === christianAccount.id || transaction.recipientAccountId === christianAccount.id)) {
+    const treasuryAccount = nextAccounts.find((account) => account.email === "treasury.ops@sandbox.skrill.local") || null;
+    const walletAccount = nextAccounts.find((account) => account.email === "wallet.qa@sandbox.skrill.local") || null;
+    nextTransactions.unshift(...buildChristianDemoTransactions(christianAccount, treasuryAccount, walletAccount));
+  }
+
+  return {
+    accounts: nextAccounts,
+    transactions: nextTransactions.slice(0, MAX_TRANSACTIONS)
   };
 }
 
@@ -243,12 +313,13 @@ function deriveOtpMailboxFromTransactions(transactions) {
 function createSeedState() {
   const merchant = seedAccount({
     ownerName: "Mercury Merchant Demo",
-    email: "merchant.alpha@sandbox.skrill.local",
+    email: PRIMARY_DEMO_EMAIL,
     type: "MERCHANT",
     balance: 480000,
     demoPassword: "Sandbox!2026",
     phone: "+44 7780 120044"
   });
+  const christian = buildChristianDemoAccount();
   const wallet = seedAccount({
     ownerName: "QA Wallet",
     email: "wallet.qa@sandbox.skrill.local",
@@ -269,6 +340,7 @@ function createSeedState() {
   });
 
   const seededTransactions = [
+    ...buildChristianDemoTransactions(christian, treasury, wallet),
     seedTransaction({
       senderAccountId: merchant.id,
       recipientEmail: "vendor.reconcile@sandbox.skrill.local",
@@ -289,7 +361,7 @@ function createSeedState() {
   return {
     version: 1,
     createdAt: nowIso(),
-    accounts: [merchant, wallet, treasury],
+    accounts: [merchant, christian, wallet, treasury],
     transactions: seededTransactions,
     requests: [],
     tokens: [],
@@ -298,7 +370,7 @@ function createSeedState() {
       createActivity("sandbox.ready", "Local Skrill sandbox initialized.", {
         tone: "good"
       }),
-      createActivity("accounts.seeded", "Seeded merchant, wallet, and treasury accounts.", {
+      createActivity("accounts.seeded", "Seeded Gabriele Navisi, Christian Vivas, wallet, and treasury accounts.", {
         tone: "neutral"
       })
     ]
