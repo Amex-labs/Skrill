@@ -1919,6 +1919,41 @@ body.sidebar-open .dashboard-sidebar-backdrop {
   flex: 1;
 }
 
+.sidebar-card--privacy {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(191, 1, 150, 0.06), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #faf8fb 100%);
+}
+
+.sidebar-privacy-note {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid #ece4ea;
+  background: #ffffff;
+}
+
+.sidebar-privacy-note__title {
+  margin: 0;
+  color: #1f1f25;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sidebar-privacy-note__copy,
+.sidebar-privacy-note__meta {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.sidebar-privacy-note__meta {
+  color: #6f6f78;
+  font-size: 14px;
+}
+
 .dashboard-main {
   display: grid;
   gap: 18px;

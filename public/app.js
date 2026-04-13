@@ -554,48 +554,21 @@ function renderAccountOptions(accounts) {
 }
 
 function renderAccounts(accounts) {
-  elements.accountsList.innerHTML = accounts.map((account) => {
-    const displayName = getDisplayAccountName(account);
-    return `
-      <article class="account-item">
-        <div class="account-item-header">
-          <div>
-            <p class="account-title">${escapeHtml(displayName)}</p>
-            <p class="account-email">${escapeHtml(account.email)}</p>
-          </div>
-          <span class="pill">${escapeHtml(account.type)}</span>
-        </div>
-        <div class="balance-row">
-          <div>
-            <p class="metric-label">Available</p>
-            <p class="balance-value">${formatMoney(account.available, account.currency)}</p>
-          </div>
-          <div>
-            <p class="metric-label">Reserved</p>
-            <p class="balance-value">${formatMoney(account.reserved, account.currency)}</p>
-          </div>
-        </div>
-        <div class="account-credentials">
-          ${renderCredential("merchant_id", account.merchantId)}
-          ${renderCredential("client_id", account.oauthClientId)}
-          ${renderCredential("client_secret", account.oauthClientSecret)}
-          ${renderCredential("api_password", account.apiPassword)}
-        </div>
-        <div class="account-actions">
-          <button class="button ghost-button" type="button" data-account-id="${account.id}">Use in lab</button>
-          <button class="button ghost-button" type="button" data-demo-login-account-id="${account.id}">Login</button>
-        </div>
-      </article>
-    `;
-  }).join("");
-}
+  const activeAccount = getActiveAccount(accounts);
+  const privacyMessage = activeAccount
+    ? "Other account profiles, balances, and credentials are hidden from this shared view."
+    : "Account profiles, balances, and credentials stay hidden until a user signs in from the homepage.";
 
-function renderCredential(label, value) {
-  return `
-    <div class="credential-row">
-      <span>${escapeHtml(label)}</span>
-      <span>${escapeHtml(value)}</span>
-    </div>
+  elements.accountsList.innerHTML = `
+    <article class="sidebar-privacy-note">
+      <p class="sidebar-privacy-note__title">Private account access</p>
+      <p class="sidebar-privacy-note__copy">
+        ${escapeHtml(privacyMessage)}
+      </p>
+      <p class="sidebar-privacy-note__meta">
+        Use the homepage login form to open a wallet securely.
+      </p>
+    </article>
   `;
 }
 
