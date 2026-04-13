@@ -6,6 +6,8 @@ const state = {
   activeView: "overview",
   selectedReceiptId: "",
   transferPreview: null,
+  transferChallengeId: "",
+  withdrawalPreview: null,
   labContext: {
     slipId: "",
     eventId: "",
@@ -73,6 +75,22 @@ const elements = {
   transferSourceBalance: document.getElementById("transferSourceBalance"),
   issueTransferOtpButton: document.getElementById("issueTransferOtpButton"),
   completeTransferButton: document.getElementById("completeTransferButton"),
+  withdrawalForm: document.getElementById("withdrawalForm"),
+  withdrawalMethod: document.getElementById("withdrawalMethod"),
+  withdrawalAmount: document.getElementById("withdrawalAmount"),
+  withdrawalCurrency: document.getElementById("withdrawalCurrency"),
+  withdrawalDestination: document.getElementById("withdrawalDestination"),
+  withdrawalDestinationLabel: document.getElementById("withdrawalDestinationLabel"),
+  withdrawalReference: document.getElementById("withdrawalReference"),
+  previewWithdrawalButton: document.getElementById("previewWithdrawalButton"),
+  submitWithdrawalButton: document.getElementById("submitWithdrawalButton"),
+  withdrawalFeedback: document.getElementById("withdrawalFeedback"),
+  withdrawalStatus: document.getElementById("withdrawalStatus"),
+  withdrawalSummary: document.getElementById("withdrawalSummary"),
+  withdrawalSourceName: document.getElementById("withdrawalSourceName"),
+  withdrawalSourceMeta: document.getElementById("withdrawalSourceMeta"),
+  withdrawalSourceBalance: document.getElementById("withdrawalSourceBalance"),
+  withdrawalMethodButtons: Array.from(document.querySelectorAll("[data-withdrawal-method]")),
   sessionState: document.getElementById("sessionState"),
   challengeBanner: document.getElementById("challengeBanner"),
   labForm: document.getElementById("labForm"),
@@ -142,6 +160,52 @@ const TRANSFER_FEE_GUIDE = {
 
 const LOCAL_SCA_THRESHOLD = 10;
 const INTERNATIONAL_SCA_THRESHOLD = 20;
+const WITHDRAWAL_METHODS = {
+  crypto: {
+    label: "Crypto withdrawal",
+    shortLabel: "Crypto",
+    destinationLabel: "Wallet address",
+    destinationPlaceholder: "Enter crypto wallet address",
+    defaultDestination: "bc1q-demo-wallet-3920",
+    feeRate: 0.018,
+    fixedFee: 4.5,
+    settlement: "Usually within 15 to 45 minutes after review.",
+    note: "Best for external crypto wallets and treasury off-ramping."
+  },
+  bank: {
+    label: "Bank withdrawal",
+    shortLabel: "Bank",
+    destinationLabel: "Bank account",
+    destinationPlaceholder: "Enter IBAN or bank account number",
+    defaultDestination: "GB33BUKB20201555555555",
+    feeRate: 0.0125,
+    fixedFee: 2.5,
+    settlement: "Usually within 1 to 2 business days.",
+    note: "Best for higher-value settlements into a bank destination."
+  },
+  card: {
+    label: "Card withdrawal",
+    shortLabel: "Card",
+    destinationLabel: "Card details",
+    destinationPlaceholder: "Enter masked card reference",
+    defaultDestination: "**** **** **** 2044",
+    feeRate: 0.021,
+    fixedFee: 1.75,
+    settlement: "Usually within a few hours, depending on issuer review.",
+    note: "Good for returning funds to an eligible payment card."
+  },
+  skrill: {
+    label: "Skrill withdrawal",
+    shortLabel: "Skrill",
+    destinationLabel: "Skrill email",
+    destinationPlaceholder: "Enter Skrill-linked email",
+    defaultDestination: "wallet.destination@account.skrill.local",
+    feeRate: 0.0095,
+    fixedFee: 1.25,
+    settlement: "Usually within the same day after wallet checks complete.",
+    note: "Best for internal wallet-to-wallet settlement."
+  }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
@@ -225,6 +289,9 @@ function bindEvents() {
       if (action === "send") {
         setActiveView("transfer");
         elements.transferRecipient.focus();
+      } else if (action === "withdrawal") {
+        setActiveView("withdrawal");
+        elements.withdrawalAmount?.focus();
       } else if (action === "receipt") {
         setActiveView("receipts");
       } else {
@@ -262,6 +329,30 @@ function bindEvents() {
     control.addEventListener("input", syncTransferToLab);
     control.addEventListener("change", syncTransferToLab);
   });
+
+  if (elements.withdrawalForm) {
+    elements.withdrawalForm.addEventListener("submit", handleWithdrawalSubmit);
+  }
+  if (elements.previewWithdrawalButton) {
+    elements.previewWithdrawalButton.addEventListener("click", handleWithdrawalPreview);
+  }
+  elements.withdrawalMethodButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setWithdrawalMethod(button.getAttribute("data-withdrawal-method") || "crypto");
+    });
+  });
+  [
+    elements.withdrawalAmount,
+    elements.withdrawalCurrency,
+    elements.withdrawalDestination,
+    elements.withdrawalReference
+  ].forEach((control) => {
+    if (!control) {
+      return;
+    }
+    control.addEventListener("input", handleWithdrawalFormChange);
+    control.addEventListener("change", handleWithdrawalFormChange);
+  });
 }
 
 async function bootstrap() {
@@ -271,6 +362,9 @@ async function bootstrap() {
   setActiveView(state.activeView);
   syncSidebarState(false);
   await refreshSnapshot();
+  if (elements.withdrawalMethod) {
+    setWithdrawalMethod(elements.withdrawalMethod.value || "crypto");
+  }
   connectStream();
   updateLabHint();
   updateCurlPreview();
@@ -300,6 +394,7 @@ function applySnapshot(snapshot) {
   renderAccounts(snapshot.accounts);
   renderWallet(snapshot.accounts, snapshot.transactions);
   renderTransferWorkspace(snapshot.accounts, snapshot.transactions);
+  renderWithdrawalWorkspace(snapshot.accounts, snapshot.transactions);
   ensureSelectedReceipt(snapshot.transactions);
   renderTransactionsTable();
   renderReceiptList(snapshot.transactions);
@@ -482,6 +577,11 @@ function updateTopbarContext() {
       kicker: "Transfer",
       title: account ? `Move money from ${displayName}.` : "Send money from your account.",
       meta: "Preview fees, confirm the final debit, and complete secure transfers."
+    },
+    withdrawal: {
+      kicker: "Withdrawal",
+      title: account ? `Withdraw from ${displayName}.` : "Withdraw from your account.",
+      meta: "Choose a payout route, review the withdrawal cost, and stage a payout safely."
     },
     transactions: {
       kicker: "Transactions",
@@ -800,10 +900,7 @@ function renderTransferWorkspace(accounts, transactions) {
     state.transferPreview = null;
   }
   const pendingChallenge = account
-    ? transactions.find((transaction) => {
-        return transaction.senderAccountId === account.id
-          && (transaction.status === "SCA_CHALLENGE" || transaction.status === "OTP_VERIFIED");
-      })
+    ? getPreferredPendingChallenge(account, transactions)
     : null;
 
   const hasAccount = Boolean(account);
@@ -849,10 +946,12 @@ function renderTransferWorkspace(accounts, transactions) {
     elements.transferChallengeCopy.textContent = hasOtpMailboxEntry
       ? "Account Authentication fee require. International Transfers of 20 or more open a confirmation step here."
       : "Transfers of 10 or more open a confirmation step here.";
+    state.transferChallengeId = pendingChallenge.id;
     if (pendingChallenge.challenge.otpCode) {
       elements.transferOtp.value = pendingChallenge.challenge.otpCode;
     }
   } else {
+    state.transferChallengeId = "";
     elements.transferChallengeCopy.textContent = "Transfers of 10 or more open a confirmation step here.";
   }
 
@@ -870,6 +969,231 @@ function renderTransferWorkspace(accounts, transactions) {
   }
 
   elements.transferSummary.innerHTML = buildTransferSummaryMarkup(account, state.transferPreview);
+}
+
+function setWithdrawalMethod(method, preserveDestination = false) {
+  const nextMethod = WITHDRAWAL_METHODS[method] ? method : "crypto";
+  const config = WITHDRAWAL_METHODS[nextMethod];
+  const currentValue = elements.withdrawalDestination ? elements.withdrawalDestination.value.trim() : "";
+  const previousMethod = elements.withdrawalMethod ? elements.withdrawalMethod.value : "";
+  const previousConfig = WITHDRAWAL_METHODS[previousMethod] || null;
+  const canPreserveDestination = preserveDestination
+    && currentValue
+    && (!previousConfig || currentValue !== previousConfig.defaultDestination);
+
+  if (elements.withdrawalMethod) {
+    elements.withdrawalMethod.value = nextMethod;
+  }
+  elements.withdrawalMethodButtons.forEach((button) => {
+    const isActive = button.getAttribute("data-withdrawal-method") === nextMethod;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  if (elements.withdrawalDestinationLabel) {
+    elements.withdrawalDestinationLabel.textContent = config.destinationLabel;
+  }
+  if (elements.withdrawalDestination) {
+    elements.withdrawalDestination.placeholder = config.destinationPlaceholder;
+    elements.withdrawalDestination.value = canPreserveDestination ? currentValue : config.defaultDestination;
+  }
+
+  if (state.snapshot) {
+    renderWithdrawalWorkspace(state.snapshot.accounts, state.snapshot.transactions);
+  }
+}
+
+function getWithdrawalMethodConfig(method) {
+  return WITHDRAWAL_METHODS[method] || WITHDRAWAL_METHODS.crypto;
+}
+
+function buildWithdrawalDraft(account) {
+  const method = elements.withdrawalMethod ? elements.withdrawalMethod.value : "crypto";
+  const config = getWithdrawalMethodConfig(method);
+  const amount = Number(elements.withdrawalAmount ? elements.withdrawalAmount.value : 0);
+  const currency = String(elements.withdrawalCurrency ? elements.withdrawalCurrency.value : account.currency || "EUR").toUpperCase();
+  const destination = String(elements.withdrawalDestination ? elements.withdrawalDestination.value : "").trim();
+  const reference = String(elements.withdrawalReference ? elements.withdrawalReference.value : "").trim() || `${config.shortLabel} payout`;
+  const feeAmount = roundAmount((amount * config.feeRate) + config.fixedFee);
+  const totalDebit = roundAmount(amount + feeAmount);
+  const canProcess = totalDebit <= Number(account.available || 0);
+
+  if (!(amount > 0)) {
+    throw new Error("Enter a positive withdrawal amount before continuing.");
+  }
+  if (!destination) {
+    throw new Error(`Enter a ${config.destinationLabel.toLowerCase()} before continuing.`);
+  }
+
+  return {
+    accountId: account.id,
+    method,
+    methodLabel: config.label,
+    shortLabel: config.shortLabel,
+    destinationLabel: config.destinationLabel,
+    destination,
+    reference,
+    amount,
+    currency,
+    feeAmount,
+    totalDebit,
+    feeRate: config.feeRate,
+    fixedFee: config.fixedFee,
+    settlement: config.settlement,
+    note: config.note,
+    canProcess
+  };
+}
+
+function renderWithdrawalWorkspace(accounts, transactions) {
+  if (!elements.withdrawalSummary) {
+    return;
+  }
+
+  const account = getActiveAccount(accounts);
+  if (account && state.withdrawalPreview && state.withdrawalPreview.accountId !== account.id) {
+    state.withdrawalPreview = null;
+  }
+
+  const hasAccount = Boolean(account);
+  if (elements.previewWithdrawalButton) {
+    elements.previewWithdrawalButton.disabled = !hasAccount;
+  }
+  if (elements.submitWithdrawalButton) {
+    elements.submitWithdrawalButton.disabled = !hasAccount;
+  }
+
+  if (!hasAccount) {
+    elements.withdrawalStatus.textContent = "Sign in to a wallet before staging a withdrawal.";
+    elements.withdrawalSourceName.textContent = "No active account";
+    elements.withdrawalSourceMeta.textContent = "Sign in to choose a payout source.";
+    elements.withdrawalSourceBalance.textContent = "EUR 0.00";
+    elements.withdrawalFeedback.textContent = "Withdrawal routes become available after you open a wallet session.";
+    elements.withdrawalSummary.innerHTML = `
+      <div class="receipt-empty">
+        Sign in to compare withdrawal routes, review the payout fee, and stage a withdrawal request.
+      </div>
+    `;
+    return;
+  }
+
+  if (elements.withdrawalCurrency.querySelector(`option[value="${account.currency}"]`)) {
+    elements.withdrawalCurrency.value = account.currency;
+  }
+
+  const config = getWithdrawalMethodConfig(elements.withdrawalMethod.value || "crypto");
+  const displayName = getDisplayAccountName(account);
+  const recentOutgoing = transactions.find((transaction) => transaction.senderAccountId === account.id);
+
+  elements.withdrawalStatus.textContent = `Review ${config.shortLabel.toLowerCase()} payout details from ${displayName} before confirming a request.`;
+  elements.withdrawalSourceName.textContent = displayName;
+  elements.withdrawalSourceMeta.textContent = `${account.email} | ${account.type} account`;
+  elements.withdrawalSourceBalance.textContent = formatMoney(account.available, account.currency);
+
+  if (!state.withdrawalPreview) {
+    elements.withdrawalSummary.innerHTML = buildIdleWithdrawalSummaryMarkup(account, config, recentOutgoing);
+    return;
+  }
+
+  elements.withdrawalSummary.innerHTML = buildWithdrawalSummaryMarkup(account, state.withdrawalPreview);
+}
+
+function buildIdleWithdrawalSummaryMarkup(account, config, recentOutgoing = null) {
+  return `
+    <article class="transfer-summary-card withdrawal-summary-card">
+      <div class="event-header">
+        <div>
+          <p class="metric-label">Preferred route</p>
+          <strong>${escapeHtml(config.label)}</strong>
+        </div>
+        <span class="status-pill dark">Awaiting preview</span>
+      </div>
+      <div class="transfer-summary-grid">
+        <div class="transfer-summary-row">
+          <span class="metric-label">Available balance</span>
+          <strong>${escapeHtml(formatMoney(account.available, account.currency))}</strong>
+          <span>${escapeHtml(account.currency)} wallet</span>
+        </div>
+        <div class="transfer-summary-row">
+          <span class="metric-label">Estimated charge</span>
+          <strong>${escapeHtml(formatFeePercent(config.feeRate))} + ${escapeHtml(formatMoney(config.fixedFee, account.currency))}</strong>
+          <span>${escapeHtml(config.destinationLabel)}</span>
+        </div>
+      </div>
+      <div class="withdrawal-summary-note">
+        <p class="metric-label">Settlement timing</p>
+        <strong>${escapeHtml(config.settlement)}</strong>
+        <span>${escapeHtml(config.note)}</span>
+      </div>
+      ${recentOutgoing ? `
+        <div class="transfer-summary-list">
+          <div class="wallet-detail-row">
+            <span>Latest movement</span>
+            <strong>${escapeHtml(formatStatusLabel(recentOutgoing.status))} · ${escapeHtml(formatDate(recentOutgoing.updatedAt || recentOutgoing.createdAt))}</strong>
+          </div>
+        </div>
+      ` : ""}
+    </article>
+  `;
+}
+
+function buildWithdrawalSummaryMarkup(account, preview) {
+  const statusLabel = preview.stage === "REQUESTED" ? "Requested" : "Preview";
+  const statusTone = preview.stage === "REQUESTED" ? "warn" : "dark";
+  const payoutAmount = roundAmount(preview.totalDebit - preview.feeAmount);
+
+  return `
+    <article class="transfer-summary-card withdrawal-summary-card">
+      <div class="event-header">
+        <div>
+          <p class="metric-label">Current route</p>
+          <strong>${escapeHtml(preview.methodLabel)}</strong>
+        </div>
+        <span class="status-pill ${statusTone}">${escapeHtml(statusLabel)}</span>
+      </div>
+      <div class="transfer-summary-grid">
+        <div class="transfer-summary-row">
+          <span class="metric-label">Destination</span>
+          <strong>${escapeHtml(preview.destination)}</strong>
+          <span>${escapeHtml(preview.destinationLabel)}</span>
+        </div>
+        <div class="transfer-summary-row">
+          <span class="metric-label">Requested amount</span>
+          <strong>${escapeHtml(formatMoney(preview.amount, preview.currency))}</strong>
+          <span>${escapeHtml(preview.reference)}</span>
+        </div>
+        <div class="transfer-summary-row">
+          <span class="metric-label">Estimated fee</span>
+          <strong>${escapeHtml(formatMoney(preview.feeAmount, preview.currency))}</strong>
+          <span>${escapeHtml(formatFeePercent(preview.feeRate))} + ${escapeHtml(formatMoney(preview.fixedFee, preview.currency))}</span>
+        </div>
+        <div class="transfer-summary-row">
+          <span class="metric-label">Total debit</span>
+          <strong>${escapeHtml(formatMoney(preview.totalDebit, preview.currency))}</strong>
+          <span>${escapeHtml(preview.canProcess ? "Funds available" : "Insufficient balance for this route")}</span>
+        </div>
+      </div>
+      <div class="transfer-summary-list">
+        <div class="wallet-detail-row">
+          <span>Expected destination amount</span>
+          <strong>${escapeHtml(formatMoney(payoutAmount, preview.currency))}</strong>
+        </div>
+        <div class="wallet-detail-row">
+          <span>Available after debit</span>
+          <strong>${escapeHtml(formatMoney(Number(account.available || 0) - preview.totalDebit, preview.currency))}</strong>
+        </div>
+        <div class="wallet-detail-row">
+          <span>Settlement timing</span>
+          <strong>${escapeHtml(preview.settlement)}</strong>
+        </div>
+      </div>
+      <div class="withdrawal-summary-note">
+        <p class="metric-label">Route notes</p>
+        <strong>${escapeHtml(preview.note)}</strong>
+        <span>${escapeHtml(preview.stage === "REQUESTED" ? "The request is staged locally for review in this wallet." : "Preview the route and confirm when you are ready.")}</span>
+      </div>
+    </article>
+  `;
 }
 
 function buildIdleTransferSummaryMarkup(account, recentOutgoing = null) {
@@ -975,6 +1299,10 @@ function formatFeePercent(rate) {
   const parsed = Number(rate);
   const percentage = (Number.isFinite(parsed) ? parsed : 0) * 100;
   return `${percentage.toFixed(1).replace(/\.0$/, "")}%`;
+}
+
+function roundAmount(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
 }
 
 function getTransferScaThreshold(value) {
@@ -1381,13 +1709,16 @@ function renderUnsupported(items) {
 
 function syncPendingChallenge(latestChallenge) {
   const activeAccount = getActiveAccount();
-  const relevantChallenge = latestChallenge && (!activeAccount || latestChallenge.senderAccountId === activeAccount.id)
-    ? latestChallenge
-    : null;
+  const relevantChallenge = activeAccount
+    ? getPreferredPendingChallenge(activeAccount, state.snapshot ? state.snapshot.transactions : [])
+    : latestChallenge && (!activeAccount || latestChallenge.senderAccountId === activeAccount.id)
+      ? latestChallenge
+      : null;
 
   if (!relevantChallenge || !relevantChallenge.challenge) {
     elements.challengeBanner.textContent = "No active SCA challenge";
     elements.challengeBanner.className = "status-pill dark challenge-banner";
+    state.transferChallengeId = "";
     state.labContext = {
       slipId: "",
       eventId: "",
@@ -1405,6 +1736,7 @@ function syncPendingChallenge(latestChallenge) {
     clientEventId: relevantChallenge.challenge.clientEventId || "",
     otpCode: relevantChallenge.challenge.otpCode || ""
   };
+  state.transferChallengeId = relevantChallenge.id;
   elements.challengeBanner.textContent = `Pending SCA · ${relevantChallenge.id}`;
   elements.challengeBanner.className = "status-pill warn challenge-banner";
 
@@ -1464,6 +1796,8 @@ function handleLogout() {
   state.activeDemoAccountId = "";
   state.selectedReceiptId = "";
   state.transferPreview = null;
+  state.transferChallengeId = "";
+  state.withdrawalPreview = null;
   state.labContext = {
     slipId: "",
     eventId: "",
@@ -1485,6 +1819,7 @@ function handleLogout() {
     renderSummary(state.snapshot.summary, state.snapshot.accounts, state.snapshot.transactions);
     renderWallet(state.snapshot.accounts, state.snapshot.transactions);
     renderTransferWorkspace(state.snapshot.accounts, state.snapshot.transactions);
+    renderWithdrawalWorkspace(state.snapshot.accounts, state.snapshot.transactions);
     renderReceiptList(state.snapshot.transactions);
     renderReceiptPreview(state.snapshot.transactions);
   }
@@ -1592,6 +1927,7 @@ async function handleTransferSubmit(event) {
       slipId: result.payload.id,
       stage: result.payload.scaRequired ? "SCA CHALLENGE" : "PROCESSED"
     };
+    state.transferChallengeId = result.payload.scaRequired ? result.payload.id : "";
 
     if (result.payload.scaRequired) {
       elements.transferFeedback.textContent = "Transfer created. Tap Send OTP below to generate the confirmation code, then verify and finalize it.";
@@ -1624,6 +1960,7 @@ async function handleTransferOtpIssue() {
     const plan = buildPresetPlan("otp", account);
     const result = await runPlan(plan, account);
     ingestLabContext(result.payload);
+    state.transferChallengeId = result.payload.slipId || state.transferChallengeId;
     elements.transferOtp.value = result.payload.sandboxOtp || "";
     showResponse(plan.responseLabel, result.status, result.payload);
     elements.transferFeedback.textContent = `Confirmation code generated. Open Developer tools whenever you want to review the code in the local OTP mailbox.`;
@@ -1650,6 +1987,7 @@ async function handleTransferComplete() {
     const verifyPlan = buildPresetPlan("verify", account);
     const verifyResult = await runPlan(verifyPlan, account);
     ingestLabContext(verifyResult.payload);
+    state.transferChallengeId = verifyResult.payload.slipId || state.transferChallengeId;
 
     const finalizePlan = buildPresetPlan("finalize", account);
     const finalizeResult = await runPlan(finalizePlan, account);
@@ -1677,6 +2015,7 @@ async function handleTransferComplete() {
       stage: "PROCESSED",
       scaRequired: false
     };
+    state.transferChallengeId = "";
     elements.transferOtp.value = "";
     elements.transferFeedback.textContent = "Transfer verified and finalized. The sandbox receipt is ready.";
     await refreshSnapshot();
@@ -1685,6 +2024,76 @@ async function handleTransferComplete() {
   } catch (error) {
     elements.transferFeedback.textContent = error.message;
     showResponse("TRANSFER COMPLETE", error.status || 400, error.payload || { error: error.message });
+    applyDisplayBranding();
+  }
+}
+
+function handleWithdrawalFormChange() {
+  if (!state.snapshot) {
+    return;
+  }
+
+  const account = getActiveAccount();
+  if (state.withdrawalPreview && account && state.withdrawalPreview.accountId === account.id) {
+    try {
+      state.withdrawalPreview = {
+        ...buildWithdrawalDraft(account),
+        stage: state.withdrawalPreview.stage || "PREVIEW"
+      };
+    } catch (error) {
+      state.withdrawalPreview = null;
+    }
+  }
+  renderWithdrawalWorkspace(state.snapshot.accounts, state.snapshot.transactions);
+  applyDisplayBranding();
+}
+
+async function handleWithdrawalPreview() {
+  const account = getActiveAccount();
+  if (!account) {
+    elements.withdrawalFeedback.textContent = "Open an account wallet before previewing a withdrawal.";
+    return;
+  }
+
+  try {
+    state.withdrawalPreview = {
+      ...buildWithdrawalDraft(account),
+      stage: "PREVIEW"
+    };
+    elements.withdrawalFeedback.textContent = state.withdrawalPreview.canProcess
+      ? `${state.withdrawalPreview.methodLabel} preview ready. Review the estimated debit before submitting the payout request.`
+      : `${state.withdrawalPreview.methodLabel} preview ready, but the current wallet balance cannot cover the payout and fee together.`;
+    renderWithdrawalWorkspace(state.snapshot ? state.snapshot.accounts : [], state.snapshot ? state.snapshot.transactions : []);
+    applyDisplayBranding();
+  } catch (error) {
+    elements.withdrawalFeedback.textContent = error.message;
+    applyDisplayBranding();
+  }
+}
+
+async function handleWithdrawalSubmit(event) {
+  event.preventDefault();
+  const account = getActiveAccount();
+  if (!account) {
+    elements.withdrawalFeedback.textContent = "Open an account wallet before requesting a withdrawal.";
+    return;
+  }
+
+  try {
+    const preview = buildWithdrawalDraft(account);
+    state.withdrawalPreview = {
+      ...preview,
+      stage: "REQUESTED",
+      requestedAt: new Date().toISOString()
+    };
+
+    elements.withdrawalFeedback.textContent = preview.canProcess
+      ? `${preview.methodLabel} request staged successfully. The payout summary is ready for review.`
+      : `${preview.methodLabel} request cannot be staged until the wallet has enough balance for the amount and route fee.`;
+    renderWithdrawalWorkspace(state.snapshot ? state.snapshot.accounts : [], state.snapshot ? state.snapshot.transactions : []);
+    applyDisplayBranding();
+  } catch (error) {
+    elements.withdrawalFeedback.textContent = error.message;
     applyDisplayBranding();
   }
 }
@@ -1763,14 +2172,12 @@ function buildPresetPlan(preset, account) {
   const currency = String(elements.labCurrency.value || account.currency || "EUR").toUpperCase();
   const recipientEmail = normalizeEmailInput(String(elements.labRecipient.value || "").trim().toLowerCase());
   const message = String(elements.labMessage.value || "Sandbox payout rehearsal").trim() || "Sandbox payout rehearsal";
-  const pendingTransaction = state.snapshot
-    ? state.snapshot.transactions.find((transaction) => {
-        return transaction.senderAccountId === account.id
-          && (transaction.status === "SCA_CHALLENGE" || transaction.status === "OTP_VERIFIED");
-      })
-    : null;
+  const pendingTransaction = getPreferredPendingChallenge(account, state.snapshot ? state.snapshot.transactions : []);
 
-  const slipId = state.labContext.slipId || (pendingTransaction ? pendingTransaction.id : "");
+  const preferredSlipId = state.transferChallengeId
+    || (state.transferPreview && state.transferPreview.accountId === account.id ? state.transferPreview.slipId : "")
+    || state.labContext.slipId;
+  const slipId = preferredSlipId || (pendingTransaction ? pendingTransaction.id : "");
   const eventId = state.labContext.eventId || (pendingTransaction && pendingTransaction.challenge ? pendingTransaction.challenge.eventId : "") || "";
   const clientEventId = state.labContext.clientEventId || (pendingTransaction && pendingTransaction.challenge ? pendingTransaction.challenge.clientEventId : "") || "";
   const verifyCode = String(elements.labOtp.value || state.labContext.otpCode || "").trim();
@@ -1981,6 +2388,8 @@ async function performDemoLogin(email, password) {
 
     state.activeDemoAccountId = payload.account.id;
     state.transferPreview = null;
+    state.transferChallengeId = "";
+    state.withdrawalPreview = null;
     window.localStorage.setItem("sandboxActiveAccountId", payload.account.id);
     elements.labAccount.value = payload.account.id;
     updateSessionState(payload.account);
@@ -2058,6 +2467,45 @@ function getWalletTransactions(transactions, account) {
   });
 }
 
+function getPendingChallengesForAccount(accountId, transactions = state.snapshot ? state.snapshot.transactions : []) {
+  return transactions
+    .filter((transaction) => {
+      return transaction.senderAccountId === accountId
+        && (transaction.status === "SCA_CHALLENGE" || transaction.status === "OTP_VERIFIED");
+    })
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.updatedAt || left.createdAt || 0);
+      const rightTime = Date.parse(right.updatedAt || right.createdAt || 0);
+      return rightTime - leftTime;
+    });
+}
+
+function getPreferredPendingChallenge(account, transactions = state.snapshot ? state.snapshot.transactions : []) {
+  if (!account) {
+    return null;
+  }
+
+  const pendingChallenges = getPendingChallengesForAccount(account.id, transactions);
+  if (!pendingChallenges.length) {
+    return null;
+  }
+
+  const preferredIds = [
+    state.transferChallengeId,
+    state.transferPreview && state.transferPreview.accountId === account.id ? state.transferPreview.slipId : "",
+    state.labContext.slipId
+  ].filter(Boolean);
+
+  for (const slipId of preferredIds) {
+    const match = pendingChallenges.find((transaction) => transaction.id === slipId);
+    if (match) {
+      return match;
+    }
+  }
+
+  return pendingChallenges[0];
+}
+
 function getDirectionForAccount(transaction, accountId) {
   return transaction.senderAccountId === accountId ? "OUTGOING" : "INCOMING";
 }
@@ -2079,7 +2527,13 @@ function ingestLabContext(body) {
   }
 
   if (body.status === "PROCESSED") {
-    state.labContext.otpCode = "";
+    state.labContext = {
+      slipId: "",
+      eventId: "",
+      clientEventId: "",
+      otpCode: ""
+    };
+    elements.labOtp.value = "";
   }
 
   updateLabHint();

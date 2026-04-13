@@ -414,6 +414,36 @@ function computeReservedAmount(accountId) {
   }, 0);
 }
 
+function expireStaleChallenges() {
+  const now = Date.now();
+  let didChange = false;
+
+  state.transactions.forEach((transaction) => {
+    if (transaction.status !== "SCA_CHALLENGE" || !transaction.challenge || !transaction.challenge.expiresAt) {
+      return;
+    }
+
+    const expiresAt = Date.parse(transaction.challenge.expiresAt);
+    if (!Number.isFinite(expiresAt) || expiresAt >= now) {
+      return;
+    }
+
+    transaction.status = "EXPIRED";
+    transaction.updatedAt = nowIso();
+    updateOtpMailboxEntry(transaction.id, transaction.challenge.otpCode || "", {
+      status: "EXPIRED",
+      expiredAt: transaction.updatedAt
+    });
+    didChange = true;
+  });
+
+  if (didChange) {
+    persistState();
+  }
+
+  return didChange;
+}
+
 function getAccount(accountId) {
   return state.accounts.find((account) => account.id === accountId) || null;
 }
@@ -577,6 +607,7 @@ function getLatestPendingChallenge(accountId) {
 }
 
 function buildSnapshot() {
+  expireStaleChallenges();
   const latestChallenge = getLatestPendingChallenge(null);
   return {
     generatedAt: nowIso(),
@@ -834,6 +865,8 @@ function findChallengeTransaction(payload, accountId) {
 }
 
 async function handleApi(req, res, url) {
+  expireStaleChallenges();
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, {
       ok: true,
