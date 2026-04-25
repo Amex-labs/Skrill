@@ -31,6 +31,7 @@ const elements = {
   authOpeners: Array.from(document.querySelectorAll("[data-open-auth]")),
   authModeButtons: Array.from(document.querySelectorAll("[data-auth-mode]")),
   authPanels: Array.from(document.querySelectorAll("[data-auth-panel]")),
+  passwordToggles: Array.from(document.querySelectorAll("[data-password-toggle]")),
   loginForm: document.getElementById("loginForm"),
   loginEmail: document.getElementById("loginEmail"),
   loginPassword: document.getElementById("loginPassword"),
@@ -242,6 +243,11 @@ function bindEvents() {
   elements.authModeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       setAuthMode(button.getAttribute("data-auth-mode") || "login");
+    });
+  });
+  elements.passwordToggles.forEach((button) => {
+    button.addEventListener("click", () => {
+      togglePasswordVisibility(button);
     });
   });
   elements.loginForm.addEventListener("submit", handleLogin);
@@ -534,6 +540,21 @@ function setAuthMode(mode = "login") {
   if (document.body.classList.contains("auth-modal-open")) {
     syncAuthViewport();
   }
+}
+
+function togglePasswordVisibility(button) {
+  const targetId = button.getAttribute("data-password-toggle");
+  const input = targetId ? document.getElementById(targetId) : null;
+  if (!input) {
+    return;
+  }
+
+  const nextVisible = input.type === "password";
+  input.type = nextVisible ? "text" : "password";
+  button.classList.toggle("is-visible", nextVisible);
+  button.setAttribute("aria-pressed", String(nextVisible));
+  button.setAttribute("aria-label", nextVisible ? "Hide password" : "Show password");
+  button.setAttribute("title", nextVisible ? "Hide password" : "Show password");
 }
 
 function syncAuthViewport() {

@@ -1331,6 +1331,10 @@ label span {
   font-weight: 600;
 }
 
+.password-field {
+  position: relative;
+}
+
 input,
 select {
   width: 100%;
@@ -1349,6 +1353,62 @@ select:focus {
   border-color: rgba(151, 0, 119, 0.42);
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(191, 1, 150, 0.06);
+}
+
+.password-field input {
+  padding-right: 58px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #6c6471;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.password-toggle:hover {
+  background: rgba(145, 0, 111, 0.08);
+  color: var(--brand);
+}
+
+.password-toggle:focus-visible {
+  outline: none;
+  background: rgba(145, 0, 111, 0.1);
+  box-shadow: 0 0 0 3px rgba(191, 1, 150, 0.12);
+  color: var(--brand);
+}
+
+.password-toggle__icon {
+  position: relative;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.password-toggle:not(.is-visible) .password-toggle__icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(-35deg);
+}
+
+.password-toggle.is-visible {
+  color: var(--brand);
 }
 
 .login-feedback {

@@ -400,7 +400,12 @@
                   </label>
                   <label>
                     <span>Password</span>
-                    <input id="loginPassword" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+                    <div class="password-field">
+                      <input id="loginPassword" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+                      <button class="password-toggle" type="button" data-password-toggle="loginPassword" aria-label="Show password" aria-pressed="false" title="Show password">
+                        <span class="password-toggle__icon" aria-hidden="true">&#128065;</span>
+                      </button>
+                    </div>
                   </label>
                   <button class="button sandbox-submit" type="submit">Log in</button>
                 </form>
@@ -454,7 +459,12 @@
                   </label>
                   <label>
                     <span>Password</span>
-                    <input id="demoPassword" name="demoPassword" type="password" placeholder="Create a password" autocomplete="new-password" required />
+                    <div class="password-field">
+                      <input id="demoPassword" name="demoPassword" type="password" placeholder="Create a password" autocomplete="new-password" required />
+                      <button class="password-toggle" type="button" data-password-toggle="demoPassword" aria-label="Show password" aria-pressed="false" title="Show password">
+                        <span class="password-toggle__icon" aria-hidden="true">&#128065;</span>
+                      </button>
+                    </div>
                   </label>
                   <button class="button sandbox-submit" type="submit">Create account</button>
                 </form>
